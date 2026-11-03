@@ -1,0 +1,24 @@
+# voice-in
+
+Push-to-talk: hold a key, talk, let go. He listens, Whisper turns it into text on this computer, Claude answers in his personality, and he says it in his bubble (out loud too once `voice-out/` exists).
+
+- **Inputs:** a KDE global shortcut press and release, and microphone audio
+- **Outputs:** `voice.listening`, `voice.thinking`, `voice.reply` and `voice.cancel` on the bus (see `core/README.md`)
+
+## Files
+- `hotkey.py`: registers "Desktop Buddy / Push to talk (hold)" with KGlobalAccel over D-Bus. It works in every app, shows up in System Settings > Shortcuts, and reports both press and release. The default is Meta+Space (it was free).
+- `recorder.py`: `pw-record` (PipeWire) to 16 kHz mono WAV in `~/.cache/desktop-buddy/`. It uses the default mic or one picked in settings, and `microphones()` lists them. Safety:
+  - The recorder process is tied to the buddy's process, so it stops even if he crashes or is killed.
+  - Quitting stops and deletes any recording, and a leftover from a hard kill is deleted at the next start.
+  - A recording stops by itself after 45 seconds.
+- `stt.py`: speech to text with whisper.cpp's `whisper-cli` (`sudo pacman -S whisper-cpp`). The models are whisper.cpp's ggml files in `~/.local/share/desktop-buddy/whisper/`: tiny.en 75 MB, base.en 142 MB (the default), small.en 466 MB. Download them from Settings > Claude > Voice.
+- `listen.py`: `VoiceIn` ties it together. Press starts recording. Release transcribes off the UI thread, deletes the recording, and asks Claude (if "Let him answer with Claude" is on), then publishes the reply. A tap under 0.4 s is ignored.
+
+## What he does
+- **listen:** leans in with a hand cupped by his face, "I'm listening…".
+- **think:** hyperfocus. He squints, paces a little and scratches his beard, with a thought cloud showing what he heard.
+- **answer:** talks with hand gestures, his reply in a word-wrapped bubble (it shows even in quiet mode, since you asked).
+
+If something's missing (no mic, Whisper not installed, no model, Claude switched off), he says so in his bubble instead.
+
+Privacy: audio never leaves the computer; only the transcript goes to Claude.
