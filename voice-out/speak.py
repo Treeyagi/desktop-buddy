@@ -122,6 +122,8 @@ class _Fetch(QThread):
     def run(self):
         deadline = time.monotonic() + LOAD_SECONDS
         while server_state() != "ok":
+            if self.isInterruptionRequested():
+                return
             if time.monotonic() > deadline:
                 self.done.emit("The voice server didn't start. Try `python3 tools/shutdown.py` and talk again.", self.gen)
                 return
@@ -149,7 +151,7 @@ class Speaker(QObject):
         self.on = False
         self.mood = 0.2
         self.server = None   # the process we started
-        self.fetch = None
+        self.fetches = set()   # running fetch threads: Qt aborts if one is garbage-collected mid-run
         self.player = None
         self.levels, self.t0 = [], 0.0
         self.reply = None    # the answer being spoken
@@ -175,6 +177,9 @@ class Speaker(QObject):
     def shutdown(self):
         """Quitting: stop the sound and the voice server (frees the GPU)."""
         self.stop_playback()
+        for fetch in list(self.fetches):   # let them end before Qt tears down
+            fetch.requestInterruption()
+            fetch.wait(3000)
         if self.server and self.server.poll() is None:
             stop_server()
             try:
@@ -211,9 +216,11 @@ class Speaker(QObject):
     def _fetch_next(self):
         if self.idx >= len(self.parts):
             return
-        self.fetch = _Fetch(self.parts[self.idx], self.mood_name, OUT.format(self.idx), self.gen)
-        self.fetch.done.connect(self._fetched)
-        self.fetch.start()
+        fetch = _Fetch(self.parts[self.idx], self.mood_name, OUT.format(self.idx), self.gen)
+        fetch.done.connect(self._fetched)
+        self.fetches.add(fetch)
+        fetch.finished.connect(lambda f=fetch: self.fetches.discard(f))
+        fetch.start()
 
     def _fetched(self, result, gen):
         if gen != self.gen or not self.reply:
