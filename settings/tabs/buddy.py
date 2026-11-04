@@ -2,6 +2,29 @@
 from settings.tabs.common import *  # noqa: F401,F403
 
 
+class UpdateJob(QThread):
+    """Talks to GitHub off the UI thread: checks for a newer release, or installs the one in `tag`."""
+    done = pyqtSignal(str, str, str)   # kind (newer | current | updated | error), message, tag
+
+    def __init__(self, tag=None):
+        super().__init__()
+        self.tag = tag
+
+    def run(self):
+        from settings import updater
+        try:
+            if self.tag:
+                self.done.emit("updated", updater.update(self.tag) + " Restart him to use it.", self.tag)
+                return
+            have, new, newer = updater.check()
+            if newer:
+                self.done.emit("newer", f"{new} is out (you have {have}).", new)
+            else:
+                self.done.emit("current", f"You're up to date ({have}).", "")
+        except (RuntimeError, OSError) as e:
+            self.done.emit("error", str(e), "")
+
+
 class BuddyTab:
     def _buddy_tab(self):
         tab = QWidget()
@@ -70,7 +93,64 @@ class BuddyTab:
         box.addWidget(self.login_hint)
         form.addRow("Startup", box)
         self._login_hint()
+
+        self.version = QLabel()
+        self.update_btn = QPushButton("Check for updates")
+        self.update_btn.clicked.connect(self._update_clicked)
+        self.update_status = self._hint("")
+        box = QVBoxLayout()
+        row = QHBoxLayout()
+        row.addWidget(self.version, 1)
+        row.addWidget(self.update_btn)
+        box.addLayout(row)
+        box.addWidget(self.update_status)
+        form.addRow("Version", box)
+        self.update_tag = None   # a newer release waiting to be installed
+        self.update_job = None
+        self._show_version()
         return tab
+
+    def _show_version(self):
+        from settings import updater
+        self.version.setText(updater.current()[1])
+
+    def _update_clicked(self):
+        from settings import updater
+        if self.update_job and self.update_job.isRunning():
+            return
+        tag = self.update_tag
+        self.update_btn.setEnabled(False)
+        self.update_status.setText("Checking GitHub..." if not tag else f"Updating to {tag}...")
+        self.update_job = UpdateJob(tag)
+        self.update_job.done.connect(self._update_done)
+        self.update_job.start()
+
+    def _update_done(self, kind, text, tag):
+        self.update_btn.setEnabled(True)
+        self.update_status.setText(text)
+        self._show_version()
+        if kind == "newer":   # offer it
+            self.update_tag = tag
+            self.update_btn.setText(f"Update to {tag}")
+        elif kind == "updated":   # offer a restart so the new code runs
+            self.update_tag = None
+            self.update_btn.setText("Restart buddy now")
+            self.update_btn.clicked.disconnect()
+            self.update_btn.clicked.connect(self._restart_after_update)
+        else:
+            self.update_tag = None
+            self.update_btn.setText("Check for updates")
+
+    def _restart_after_update(self):
+        self.update_btn.clicked.disconnect()
+        self.update_btn.clicked.connect(self._update_clicked)
+        self.update_btn.setText("Check for updates")
+        if self.run_btn.text() == "Quit buddy":   # he's running: quit him, then start the new code
+            self._start_or_quit()
+            QTimer.singleShot(1800, self._start_or_quit)
+        else:
+            self._start_or_quit()
+        self.update_status.setText("Restarting him...")
 
     def _login_toggled(self, on):
         if on:
