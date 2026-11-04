@@ -22,10 +22,11 @@ def pids(pattern):
 def main():
     speak = load("voice-out", "speak")
     speak.stop_server()                       # asks the voice server to exit cleanly
-    found = {"the buddy": pids(r"python3? .*overlay/main\.py"),
-             "the voice server": pids(r"voice-out/server\.py"),
-             "a recording": pids(r"pw-record.*desktop-buddy"),
-             "speech playback": pids(r"pw-play.*desktop-buddy/speech\.wav")}
+    # anchored to the start of the command line, so a shell that merely mentions these names is left alone
+    found = {"the buddy": pids(r"^(\S*/)?python[0-9.]* (\S*/)?overlay/main\.py"),
+             "the voice server": pids(r"^(\S*/)?python[0-9.]* (\S*/)?voice-out/server\.py"),
+             "a recording": pids(r"^(\S*/)?pw-record .*desktop-buddy"),
+             "speech playback": pids(r"^(\S*/)?pw-play .*desktop-buddy/speech\.wav")}
     for what, ps in found.items():
         for pid in ps:
             try:

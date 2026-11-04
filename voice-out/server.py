@@ -19,7 +19,7 @@ import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 8765
-IDLE_MINUTES = 15
+IDLE_MINUTES = 30
 SAMPLES = os.path.expanduser("~/.local/share/desktop-buddy/voice")
 # mood -> (his recording of that mood, Chatterbox "exaggeration": how emotional it sounds)
 MOODS = {"normal": 0.5, "excited": 0.8, "annoyed": 0.65, "chill": 0.3}
@@ -50,7 +50,7 @@ def chunks(text):
     return parts
 
 
-def speak(text, mood):
+def speak(text, mood, tune=None):
     import numpy as np
     sample = os.path.join(SAMPLES, f"{mood}.wav")
     if not os.path.exists(sample):
@@ -58,7 +58,9 @@ def speak(text, mood):
     pieces = []
     with lock:
         for part in chunks(text):
-            wav = model.generate(part, audio_prompt_path=sample, exaggeration=MOODS.get(mood, 0.5), cfg_weight=0.5)
+            args = dict(exaggeration=MOODS.get(mood, 0.5), cfg_weight=0.3, temperature=0.8)  # 0.3: slower, more natural pacing than 0.5
+            args.update({k: float(v) for k, v in (tune or {}).items() if k in args})
+            wav = model.generate(part, audio_prompt_path=sample, **args)
             pieces.append(wav.squeeze().cpu().numpy())
             pieces.append(np.zeros(int(model.sr * 0.18), dtype="float32"))  # a breath between sentences
     audio = np.concatenate(pieces) if pieces else np.zeros(1, dtype="float32")
@@ -99,7 +101,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             req = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
-            audio = speak(str(req.get("text", "")), str(req.get("mood", "normal")))
+            audio = speak(str(req.get("text", "")), str(req.get("mood", "normal")), req.get("tune"))
         except Exception as e:  # report instead of dying: the buddy shows the error in his bubble
             self._send(500, f"{type(e).__name__}: {e}")
             return

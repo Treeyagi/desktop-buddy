@@ -8,11 +8,11 @@ He speaks his answers in the user's cloned voice. Everything runs on this comput
 
 ## How it works
 - `samples.py`: the four mood recordings from the My voice tab (`~/.local/share/desktop-buddy/voice/{normal,excited,annoyed,chill}.wav`).
-- `server.py`: runs in its own Python 3.11 env, `~/.local/share/desktop-buddy/tts/.venv` (made with `uv`, about 8 GB with Chatterbox, PyTorch and the model). It keeps Chatterbox loaded on the GPU (about 5 GB) and answers `POST /speak` on 127.0.0.1:8765 with a WAV. It exits by itself after 15 idle minutes.
-- `speak.py`: the `Speaker` in the buddy. It starts the server when you press the talk key (so it loads while you talk), asks for audio when the reply comes, plays it with `pw-play`, and publishes `voice.say` when the sound is ready so the bubble and the lips start together with it. If anything is missing it falls back to text only.
+- `server.py`: runs in its own Python 3.11 env, `~/.local/share/desktop-buddy/tts/.venv` (made with `uv`, about 8 GB with Chatterbox, PyTorch and the model). It keeps Chatterbox loaded on the GPU (about 5 GB) and answers `POST /speak` on 127.0.0.1:8765 with a WAV. It exits by itself after 30 idle minutes. Pacing: `cfg_weight` 0.3 (chosen by ear against 0.5 and 0.2; lower is slower and calmer), `temperature` 0.8, and `exaggeration` per mood in `MOODS`. A request can pass `"tune": {...}` to try other values.
+- `speak.py`: the `Speaker` in the buddy. It starts the server when the buddy starts and when you press the talk key, splits the reply into sentences, generates the first, and publishes `voice.say` as soon as that one is ready so the bubble and the lips start together with the sound. The rest is generated while the first plays and played back to back (`voice.say` carries an estimate of the full length). If anything is missing it falls back to text only.
 - **Mood:** the recording used depends on his mood and the text: annoyed when grumpy, excited when delighted or lots of "!", chill for short trailing lines, else normal.
 - **Calls:** if another app is recording from the microphone (a call), he stays quiet and only shows the bubble.
-- **Speed:** about 5 s to start a sentence once loaded, 15 to 20 s for the first answer after the server was off.
+- **Speed:** with the voice loaded he starts talking about 5 s after Claude's reply arrives (one sentence at a time after that); the voice loads when the buddy starts, so the 15 to 20 s cold start only happens after it timed out or `tools/shutdown.py`. It keeps about 5 GB of GPU memory while loaded.
 
 ## Shutting everything down
 - Quitting the buddy (tray > Quit, Ctrl+C) also stops the voice server and any sound.
