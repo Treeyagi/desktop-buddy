@@ -5,6 +5,7 @@ he says it in his bubble (out loud too, once voice-out exists).
 Publishes on the bus (see core/README.md):
   voice.listening  True when the key goes down, False when it comes up
   voice.thinking   the transcript, while Claude works on an answer
+  voice.reply_part one finished sentence of the answer while Claude is still writing it (str)
   voice.reply      {"text", "error", "heard"}: his answer, or why there isn't one
   voice.cancel     a tap too short to be speech
 """
@@ -16,6 +17,7 @@ from PyQt6.QtCore import QObject, Qt, QThread, QTimer, pyqtSignal
 from PyQt6.QtGui import QImage
 
 from brain import client
+from brain.session import session
 from core.load import load
 
 hotkey = load("voice-in", "hotkey")
@@ -38,6 +40,7 @@ def _remove(path):
 
 class _Work(QThread):
     heard = pyqtSignal(str)
+    part = pyqtSignal(str)   # one finished sentence of the answer, while Claude is still writing
     done = pyqtSignal(object)
 
     def __init__(self, wav, settings, shot=None):
@@ -81,8 +84,12 @@ class _Work(QThread):
                                                     "Settings > Claude and I'll answer you."})
             return
         try:
-            reply = client.ask(text, self.s.get("claude_backend", "claude-code"),
-                               self.s.get("claude_model", client.DEFAULT_MODEL), image=image)
+            reply = None
+            if not image and self.s.get("claude_backend", "claude-code") == "claude-code":
+                reply = session.ask(text, self.part.emit)   # the warm process, answering in a stream
+            if reply is None:   # no warm process (or a screenshot, or the API): the one-shot way
+                reply = client.ask(text, self.s.get("claude_backend", "claude-code"),
+                                   self.s.get("claude_model", client.DEFAULT_MODEL), image=image)
         finally:
             _remove(image)  # the screenshot is gone as soon as he's looked at it
         self.done.emit({"heard": text, "text": reply.text, "error": reply.error})
@@ -113,6 +120,13 @@ class VoiceIn(QObject):
         self.rec.stop()
         self.rec.discard()
         self._drop_shot()
+        session.stop()
+
+    def _warm_claude(self):
+        """Keep a Claude process ready so the answer doesn't wait for it to start (main thread)."""
+        s = self.settings
+        if s.get("claude_enabled") and s.get("claude_backend", "claude-code") == "claude-code":
+            session.warm(s.get("claude_model", client.DEFAULT_MODEL))
 
     def _timeout(self):
         self.ptt.down = self.screen.down = False
@@ -131,6 +145,7 @@ class VoiceIn(QObject):
             self.ptt.clear()
             self.screen.clear()
         self.rec.target = s.get("voice_mic") or None
+        self._warm_claude()
 
     def busy(self):
         return self.work is not None and self.work.isRunning()
@@ -142,6 +157,7 @@ class VoiceIn(QObject):
             self.bus.publish("voice.reply", {"error": "I can't record: pw-record (PipeWire) is missing."})
             return
         self.shot = self._grab() if screen else None
+        self._warm_claude()
         self.rec.start()
         self.limit.start(MAX_SECONDS * 1000)
         self.bus.publish("voice.listening", True)
@@ -181,5 +197,6 @@ class VoiceIn(QObject):
         self.work = _Work(self.rec.path, self.settings, self.shot)
         self.shot = None
         self.work.heard.connect(lambda text: self.bus.publish("voice.thinking", text))
+        self.work.part.connect(lambda text: self.bus.publish("voice.reply_part", text))
         self.work.done.connect(lambda r: self.bus.publish("voice.reply", r))
         self.work.start()

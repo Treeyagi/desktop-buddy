@@ -18,6 +18,7 @@ Event bus and shared config. Every other module talks only through this, so none
 | `voice.listening` | `True` on push-to-talk press, `False` on release | voice-in | character (listen / think), overlay (un-pause) |
 | `voice.thinking` | the transcript, while Claude works | voice-in | character (thought cloud) |
 | `voice.reply` | `{"text", "error", "heard"}` | voice-in | voice-out (speaks it, then re-publishes as `voice.say`) |
+| `voice.reply_part` | `str`, one finished sentence while Claude is still writing | voice-in | voice-out (starts speaking early) |
 | `voice.say` | the reply plus `"seconds"` (audio length, 0 if silent) | voice-out | character (answer: bubble and lips) |
 | `buddy.hum` | `True` when a happy walk starts with a hum, `False` when it ends | character | voice-out (plays the hum) |
 | `voice.mouth` | `float` 0..1 while audio plays, then `None` | voice-out | character (lip sync) |

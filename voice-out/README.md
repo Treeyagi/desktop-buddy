@@ -12,7 +12,11 @@ He speaks his answers in the user's cloned voice. Everything runs on this comput
 - `speak.py`: the `Speaker` in the buddy. It starts the server when the buddy starts and when you press the talk key, splits the reply into sentences, generates the first, and publishes `voice.say` as soon as that one is ready so the bubble and the lips start together with the sound. The rest is generated while the first plays and played back to back (`voice.say` carries an estimate of the full length). If anything is missing it falls back to text only.
 - **Mood:** the recording used depends on his mood and the text: annoyed when grumpy, excited when delighted or lots of "!", chill for short trailing lines, else normal.
 - **Calls:** if another app is recording from the microphone (a call), he stays quiet and only shows the bubble.
-- **Speed:** with the voice loaded he starts talking about 5 s after Claude's reply arrives (one sentence at a time after that); the voice loads when the buddy starts, so the 15 to 20 s cold start only happens after it timed out or `tools/shutdown.py`. It keeps about 5 GB of GPU memory while loaded.
+- **Streaming from Claude:** `brain/session.py` keeps one Claude Code process warm (no 2.5 s startup per question) and hands each finished sentence to `voice.reply_part`; the Speaker starts the voice on the first one while Claude is still writing. The whole text arrives as `voice.reply`, and `voice.say` follows once the first sound is ready.
+- **Speed (old, one sentence at a time):** with the voice loaded he starts talking about 5 s after Claude's reply arrives (one sentence at a time after that); the voice loads when the buddy starts, so the 15 to 20 s cold start only happens after it timed out or `tools/shutdown.py`. It keeps about 5 GB of GPU memory while loaded.
+
+## Where the time goes (measured)
+Speech to text 0.6 s, Claude's first sentence about 1.5 to 2.5 s (warm process), the voice about 1.5 to 2.5 s for that sentence: sound starts roughly 3 to 4 s after you let go of the key (it was about 10 s). He keeps answers to two short sentences (`brain/personality.md`), which is also what keeps the speech short.
 
 ## Shutting everything down
 - Quitting the buddy (tray > Quit, Ctrl+C) also stops the voice server and any sound.

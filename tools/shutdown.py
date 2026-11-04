@@ -25,6 +25,7 @@ def main():
     # anchored to the start of the command line, so a shell that merely mentions these names is left alone
     found = {"the buddy": pids(r"^(\S*/)?python[0-9.]* (\S*/)?overlay/main\.py"),
              "the voice server": pids(r"^(\S*/)?python[0-9.]* (\S*/)?voice-out/server\.py"),
+             "the warm Claude process": pids(r"^(\S*/)?claude -p .*--input-format stream-json"),
              "a recording": pids(r"^(\S*/)?pw-record .*desktop-buddy"),
              "speech playback": pids(r"^(\S*/)?pw-play .*desktop-buddy/speech\.wav")}
     for what, ps in found.items():

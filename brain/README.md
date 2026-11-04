@@ -10,6 +10,7 @@ Where Claude gets called, and where the personality lives.
 - `personality.md`: the system prompt. Snarky raw philosopher, always lands on a solution, never cruel to the helpless, no cop-outs, sincere about faith and family without preaching, and short spoken answers. Edit it freely.
 - `who-i-am.md`: you fill this in (name, family, faith, passions, sayings, pet peeves, how you talk). Only sections you've filled in get sent; anything still marked "(fill in)" is skipped.
 - `client.py`: `ask(question, backend, model)` returns a `Reply` (text or error, seconds taken). It blocks, so call it off the UI thread.
+- `session.py`: one `claude` process kept warm and answering in a stream (Claude Code backend, no screenshot). Restarts after 10 questions, 20 idle minutes, or when the personality or model changes, and dies with the buddy. It remembers the last few questions so follow-ups work. Screenshots and the API key backend use the one-shot `ask()`.
 - `keychain.py`: keeps the API key in the system keyring (KWallet on Plasma, through `secret-tool`), never in a file.
 
 ## Two ways to reach Claude (Claude tab in settings)

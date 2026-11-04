@@ -154,17 +154,28 @@ class Speaker(QObject):
         self.fetches = set()   # running fetch threads: Qt aborts if one is garbage-collected mid-run
         self.player = None
         self.levels, self.t0 = [], 0.0
-        self.reply = None    # the answer being spoken
-        self.parts, self.idx, self.gen = [], 0, 0   # its sentences, how many are generated, request number
-        self.ready = []      # generated wavs waiting to be played
-        self.said = False    # voice.say already published for this answer
-        self.speaking = False
-        self.mood_name = "normal"
+        self.gen = 0         # which answer this is; results of an older one are dropped
+        self._reset()
+        bus.subscribe("voice.reply_part", self._on_part)
         bus.subscribe("voice.reply", self._on_reply)
-        bus.subscribe("voice.listening", lambda down: down and self._warm_up())
+        bus.subscribe("voice.listening", self._on_listening)
         bus.subscribe("attention.mood", lambda m: setattr(self, "mood", float(m)))
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._tick)
+
+    def _reset(self):
+        self.streaming = False   # an answer is being spoken (sentences may still be arriving)
+        self.complete = False    # all of its sentences are here
+        self.reply = None        # the final voice.reply, once it arrives
+        self.parts, self.buf = [], ""   # sentences to speak, and a short one waiting for company
+        self.idx = 0             # how many parts have been requested
+        self.in_flight = False
+        self.ready = []          # generated (wav path, characters) waiting to be played
+        self.rate = None         # seconds of audio per character, from the first sentence
+        self.said = False        # voice.say already published
+        self.speaking = False
+        self.skip = False        # this answer isn't spoken (call, off): leave it to voice.reply
+        self.mood_name = "normal"
 
     def apply(self, s):
         was = self.on
@@ -201,54 +212,111 @@ class Speaker(QObject):
             return "chill" if "..." in text else "normal"
         return "normal"
 
+    def _on_listening(self, down):
+        if down:
+            self.stop_playback()   # you started talking: he stops
+            self._warm_up()
+
+    def _can_speak(self):
+        return self.on and installed() and not on_a_call()
+
+    # the answer arrives: sentence by sentence, then whole --------------------------------
+    def _begin(self, first_text):
+        self.stop_playback()
+        self._reset()
+        self.streaming = True
+        self.mood_name = self._mood_name(first_text)
+        self._warm_up()
+
+    def _on_part(self, text):
+        if self.skip:
+            return
+        if self.streaming and self.complete:   # a new answer while the old one is still playing
+            self.stop_playback()
+        if not self.streaming:
+            if not self._can_speak():
+                self.skip = True
+                return
+            self._begin(text)
+        self.buf = f"{self.buf} {text}".strip()
+        if len(self.buf) >= MIN_CHUNK // 2:   # a very short sentence waits for the next one
+            self.parts.append(self.buf)
+            self.buf = ""
+            self._kick()
+
     def _on_reply(self, reply):
         reply = reply or {}
         text = reply.get("text")
-        if not (self.on and text and not reply.get("error")) or not installed() or on_a_call():
+        skipped, self.skip = self.skip, False
+        if self.streaming and self.complete:   # not the end of the answer being spoken: a new one
+            self.stop_playback()
+        if not self.streaming and (skipped or not (self._can_speak() and text and not reply.get("error"))):
+            self.bus.publish("voice.say", reply)   # nothing to speak: show it now
+            return
+        if not self.streaming:   # a whole answer with no parts before it (the API, or a screenshot)
+            self._begin(text)
+            self.parts = split_sentences(text)
+        if reply.get("error") or not text:
+            self.stop_playback()
             self.bus.publish("voice.say", reply)
             return
-        self.stop_playback()
-        self.reply, self.parts, self.idx, self.said = reply, split_sentences(text), 0, False
-        self.mood_name = self._mood_name(text)
-        self._warm_up()
-        self._fetch_next()
+        if self.buf:
+            self.parts.append(self.buf)
+            self.buf = ""
+        self.reply, self.complete = reply, True
+        self._kick()
+        self._maybe_say()
+        if not (self.speaking or self.ready or self.in_flight) and self.idx >= len(self.parts):
+            if not self.said:
+                self.bus.publish("voice.say", reply)
+            self.stop_playback()   # everything was already spoken before the final text arrived
 
-    def _fetch_next(self):
-        if self.idx >= len(self.parts):
+    def _kick(self):
+        """Ask the voice server for the next sentence, one at a time, while the last one plays."""
+        if self.in_flight or self.idx >= len(self.parts):
             return
-        fetch = _Fetch(self.parts[self.idx], self.mood_name, OUT.format(self.idx), self.gen)
-        fetch.done.connect(self._fetched)
+        self.in_flight = True
+        part = self.parts[self.idx]
+        fetch = _Fetch(part, self.mood_name, OUT.format(f"{self.gen}_{self.idx}"), self.gen)
+        self.idx += 1
+        fetch.done.connect(lambda result, gen, n=len(part): self._fetched(result, gen, n))
         self.fetches.add(fetch)
         fetch.finished.connect(lambda f=fetch: self.fetches.discard(f))
         fetch.start()
 
-    def _fetched(self, result, gen):
-        if gen != self.gen or not self.reply:
+    def _fetched(self, result, gen, chars):
+        if gen != self.gen or not self.streaming:
             return   # an answer that was cancelled
+        self.in_flight = False
         if not os.path.exists(str(result)):   # an error string
             print("voice-out:", result)
-            if not self.said:
+            if not self.said and self.reply:
                 self.bus.publish("voice.say", self.reply)   # text only
-            self.reply = None
+            self.stop_playback()
             return
-        self.idx += 1
-        self.ready.append(result)
-        self._fetch_next()   # keep generating while this plays
+        self.ready.append((result, chars))
+        self._kick()   # keep generating while this plays
         if not self.speaking:
             self._play_next()
+
+    def _maybe_say(self):
+        """Show the answer once there's sound for it and we know the whole text."""
+        if self.said or not self.reply or self.rate is None:
+            return
+        self.said = True
+        self.bus.publish("voice.say", dict(self.reply, seconds=self.rate * len(self.reply["text"]) + 0.5))
 
     def _play_next(self):
         if not self.ready:
             return
-        path = self.ready.pop(0)
+        path, chars = self.ready.pop(0)
         try:
             self.levels, seconds = envelope(path)
         except (OSError, wave.Error, EOFError):
             self.levels, seconds = [], 0.0
-        if not self.said:   # the first sentence is ready: show the answer, with a guess at the full length
-            self.said = True
-            share = max(1, len(self.parts[0])) / max(1, sum(len(p) for p in self.parts))
-            self.bus.publish("voice.say", dict(self.reply, seconds=seconds / share + 0.5))
+        if self.rate is None and chars:
+            self.rate = seconds / chars
+            self._maybe_say()
         self.speaking = True
         self.player = subprocess.Popen(["pw-play", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.t0 = time.monotonic()
@@ -263,10 +331,11 @@ class Speaker(QObject):
         self.bus.publish("voice.mouth", 0.0)
         if self.ready:
             self._play_next()
-        elif self.idx >= len(self.parts):   # that was the last sentence
+        elif self.complete and self.idx >= len(self.parts) and not self.in_flight:   # that was the last one
             self.stop_playback()
         else:
             self.speaking = False   # the next sentence isn't ready yet; _fetched will start it
+            self.timer.stop()
 
     def stop_playback(self):
         self.gen += 1   # anything still being generated is dropped
@@ -275,7 +344,8 @@ class Speaker(QObject):
             self.player.kill()
         self.player = None
         was_speaking = self.speaking or bool(self.levels)
-        self.speaking, self.levels, self.ready, self.reply = False, [], [], None
+        self._reset()
+        self.levels = []
         if was_speaking:
             self.bus.publish("voice.mouth", None)
         for path in glob.glob(OUT.format("*")):
