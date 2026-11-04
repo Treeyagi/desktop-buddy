@@ -14,6 +14,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -28,16 +29,18 @@ from PyQt6.QtNetwork import QLocalSocket, QNetworkAccessManager, QNetworkReply, 
 from PyQt6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QCheckBox,  # noqa: E402
                              QComboBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
                              QKeySequenceEdit, QLineEdit, QListWidget, QListWidgetItem,
-                             QProgressBar, QPushButton, QRadioButton, QScrollArea, QSlider,
+                             QProgressBar, QPushButton, QRadioButton, QScrollArea, QSlider, QSpinBox,
                              QTabWidget, QToolButton, QVBoxLayout, QWidget)
 
 from brain import client, keychain  # noqa: E402
 import character.rig as rig  # noqa: E402
+from character.adhd import TANGENTS  # noqa: E402
 from character.behavior import GREETINGS, QUIPS, Buddy  # noqa: E402
 from core.load import load  # noqa: E402
 from settings import autostart  # noqa: E402
 
 stt = load("voice-in", "stt")
+samples = load("voice-out", "samples")
 recorder = load("voice-in", "recorder")
 from settings.store import DEFAULTS, PID_PATH, SOCKET, SettingsFile  # noqa: E402
 from settings.tray import buddy_icon  # noqa: E402
@@ -120,6 +123,7 @@ class Preview(QWidget):
         rig.set_shoes(str(s.get("shoes", "hot pink")))
         self.buddy.quips = list(s.get("quips") or QUIPS)
         self.buddy.greetings = list(s.get("greetings") or GREETINGS)
+        self.buddy.tangents = list(s.get("tangents") or TANGENTS)
         self.buddy.set_companion(bool(s.get("companion_bee", True)))
         self.paused = bool(s["paused"])
 
@@ -212,6 +216,7 @@ class SettingsWindow(QWidget):
         tabs.addTab(self._look_tab(), "Look")
         tabs.addTab(self._sayings_tab(), "Sayings")
         tabs.addTab(self._claude_tab(), "Claude")
+        tabs.addTab(self._my_voice_tab(), "My voice")
 
         reset = QPushButton("Reset to defaults")
         reset.clicked.connect(lambda: self.settings.set(**DEFAULTS))
@@ -386,6 +391,44 @@ class SettingsWindow(QWidget):
         for w in (self.icon_visits, self.new_files, self.companion):
             box.addWidget(w)
         outer.addWidget(icons)
+
+        adhd = QGroupBox("ADHD brain")
+        box = QVBoxLayout(adhd)
+        self.adhd_boxes = {}
+        for key, label in (("adhd_squirrel", "Squirrel moments: now and then he chases your mouse cursor"),
+                           ("adhd_distract", "Gets distracted by windows you switch to and sounds that start"),
+                           ("adhd_tangents", "Tangents: \"wait, unrelated, but...\""),
+                           ("adhd_mood", "Moods: grumpy when ignored for a while, smug when you take his advice")):
+            cb = QCheckBox(label)
+            cb.toggled.connect(lambda on, k=key: self._queue(**{k: on}))
+            box.addWidget(cb)
+            self.adhd_boxes[key] = cb
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Nudge me after"))
+        self.nudge = QSpinBox()
+        self.nudge.setRange(0, 180)
+        self.nudge.setSingleStep(15)
+        self.nudge.setSuffix(" min on one window")
+        self.nudge.setSpecialValueText("never")
+        self.nudge.valueChanged.connect(lambda v: self._queue(nudge_minutes=v))
+        row.addWidget(self.nudge)
+        row.addStretch(1)
+        box.addLayout(row)
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Focus timer:"))
+        for label, minutes in (("25 min", 25), ("50 min", 50), ("Stop", 0)):
+            b = QPushButton(label)
+            b.clicked.connect(lambda _, m=minutes: self._focus(m))
+            row.addWidget(b)
+        row.addStretch(1)
+        for label, name in (("Tangent now", "tangent"), ("Sulk now", "sulk")):
+            b = QPushButton(label)
+            b.clicked.connect(lambda _, n=name: self._do_now(n))
+            row.addWidget(b)
+        box.addLayout(row)
+        box.addWidget(self._hint("The focus timer is also in the tray menu. He sits quietly beside you "
+                                 "with a countdown, then celebrates at break time."))
+        outer.addWidget(adhd)
         outer.addStretch(1)
 
         scroll = QScrollArea()
@@ -405,6 +448,17 @@ class SettingsWindow(QWidget):
         self.vend_odds_label.setText(f"{self.vend_odds.value()}%")
         self.vend_pity_label.setText(f"+{self.vend_pity.value()}%")
         self._queue(vending_odds=self.vend_odds.value() / 100, vending_pity=self.vend_pity.value() / 100)
+
+    def _focus(self, minutes):
+        sock = QLocalSocket()
+        sock.connectToServer(SOCKET)
+        if not sock.waitForConnected(300):
+            self.do_status.setText("Start the buddy to use the focus timer.")
+            return
+        sock.write((json.dumps({"focus": minutes}) + "\n").encode())
+        sock.flush()
+        sock.waitForBytesWritten(300)
+        sock.disconnectFromServer()
 
     def _do_now(self, name):
         if self._send(name):
@@ -450,7 +504,9 @@ class SettingsWindow(QWidget):
                                    "onto a second line in his bubble."))
         self.say_lists = {}
         for key, title, defaults, action in (("quips", "Random sayings", QUIPS, "quip"),
-                                             ("greetings", "When he waves", GREETINGS, "wave")):
+                                             ("greetings", "When he waves", GREETINGS, "wave"),
+                                             ("tangents", "Tangents (\"wait, unrelated, but...\")",
+                                              TANGENTS, "tangent")):
             group = QGroupBox(title)
             box = QVBoxLayout(group)
             lst = QListWidget()
@@ -683,6 +739,93 @@ class SettingsWindow(QWidget):
         scroll.setWidget(tab)
         return scroll
 
+    # the My voice tab: record the samples his voice is cloned from -----------------
+    def _my_voice_tab(self):
+        tab = QWidget()
+        outer = QVBoxLayout(tab)
+        outer.addWidget(self._hint(
+            "He'll talk in your voice. Read each script out loud in that mood, the way you'd really "
+            "say it: one quiet room, the same mic every time, 10 to 20 seconds each. The recordings "
+            "stay on this computer (~/.local/share/desktop-buddy/voice). Uses the microphone picked "
+            "in Claude > Voice."))
+        self.studio = {}
+        self.studio_rec = recorder.Recorder(rate=samples.RATE)
+        self.recording_mood = None
+        self.studio_timer = QTimer(self)
+        self.studio_timer.timeout.connect(self._studio_tick)
+        for mood, label, script in samples.MOODS:
+            group = QGroupBox(label)
+            box = QVBoxLayout(group)
+            text = QLabel(f"\u201c{script}\u201d")
+            text.setWordWrap(True)
+            text.setStyleSheet("font-size: 15px; padding: 4px;")
+            box.addWidget(text)
+            row = QHBoxLayout()
+            rec = QPushButton("\u25cf Record")
+            play = QPushButton("\u25b6 Play")
+            status = self._hint("")
+            rec.clicked.connect(lambda _, m=mood: self._toggle_record(m))
+            play.clicked.connect(lambda _, m=mood: subprocess.Popen(["pw-play", samples.path(m)]))
+            row.addWidget(rec)
+            row.addWidget(play)
+            row.addWidget(status, 1)
+            box.addLayout(row)
+            outer.addWidget(group)
+            self.studio[mood] = (rec, play, status)
+        outer.addStretch(1)
+        self._refresh_studio()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(tab)
+        return scroll
+
+    def _refresh_studio(self):
+        for mood, (rec, play, status) in self.studio.items():
+            secs = samples.seconds(mood)
+            busy = self.recording_mood is not None
+            rec.setEnabled(not busy or self.recording_mood == mood)
+            play.setEnabled(secs > 0 and not busy)
+            if self.recording_mood != mood:
+                rec.setText("\u25cf Record again" if secs else "\u25cf Record")
+                status.setText(f"\u2713 {secs:.1f} s recorded" if secs >= 3 else "not recorded yet")
+
+    def _toggle_record(self, mood):
+        rec, _, status = self.studio[mood]
+        if self.recording_mood == mood:  # stop
+            self.studio_timer.stop()
+            secs = self.studio_rec.stop()
+            self.recording_mood = None
+            tmp = self.studio_rec.path
+            if self.studio_rec.error:
+                self._refresh_studio()
+                status.setText(self.studio_rec.error)
+            elif secs < 3:
+                os.remove(tmp) if os.path.exists(tmp) else None
+                self._refresh_studio()
+                status.setText("That was too short; read the whole script.")
+            else:
+                os.replace(tmp, samples.path(mood))
+                self._refresh_studio()
+            return
+        os.makedirs(samples.DIR, exist_ok=True)
+        self.studio_rec.path = samples.path(mood) + ".tmp.wav"
+        self.studio_rec.target = self.mic.currentData()
+        self.studio_rec.start()
+        self.recording_mood = mood
+        self.studio_started = time.monotonic()
+        self._refresh_studio()
+        rec.setText("\u25a0 Stop")
+        self.studio_timer.start(200)
+
+    def _studio_tick(self):
+        mood = self.recording_mood
+        if mood is None:
+            return
+        secs = time.monotonic() - self.studio_started
+        self.studio[mood][2].setText(f"recording\u2026 {secs:.0f} s (press Stop when you're done)")
+        if secs > 40:  # nobody needs more than this; don't leave the mic on
+            self._toggle_record(mood)
+
     # voice ------------------------------------------------------------------------
     def _fill_mics(self, selected):
         self._syncing, was = True, self._syncing
@@ -896,6 +1039,9 @@ class SettingsWindow(QWidget):
         self.new_files.setChecked(bool(s.get("new_file_reaction", True)))
         self.new_files.setEnabled(self.icon_visits.isChecked())
         self.companion.setChecked(bool(s.get("companion_bee", True)))
+        for key, cb in self.adhd_boxes.items():
+            cb.setChecked(bool(s.get(key, True)))
+        self.nudge.setValue(int(s.get("nudge_minutes", 60) or 0))
         shoe = self.shoe_buttons.get(s.get("shoes", "hot pink"))
         if shoe:
             shoe.setChecked(True)
@@ -931,6 +1077,11 @@ class SettingsWindow(QWidget):
         QTimer.singleShot(1200, self._update_status)
 
     def closeEvent(self, e):
+        if self.recording_mood:  # never leave the mic on, or keep a half-finished take
+            self.studio_timer.stop()
+            self.studio_rec.stop()
+            self.studio_rec.discard()
+            self.recording_mood = None
         self._flush()
         super().closeEvent(e)
 

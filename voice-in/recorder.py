@@ -21,8 +21,9 @@ def _die_with_parent():
 
 
 class Recorder:
-    def __init__(self, path=PATH):
+    def __init__(self, path=PATH, rate=16000):
         self.path = path
+        self.rate = rate
         self.proc = None
         self.started = 0.0
         self.target = None   # a PipeWire source name, or None for the default mic
@@ -36,7 +37,7 @@ class Recorder:
         self.stop()
         self.error = ""
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        cmd = ["pw-record", "--rate", "16000", "--channels", "1", "--format", "s16"]
+        cmd = ["pw-record", "--rate", str(self.rate), "--channels", "1", "--format", "s16"]
         if self.target:
             cmd += ["--target", self.target]
         self.proc = subprocess.Popen(cmd + [self.path], stdout=subprocess.DEVNULL,

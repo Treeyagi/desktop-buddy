@@ -56,3 +56,15 @@ workspace.windowActivated.connect(snapshot);
 workspace.currentDesktopChanged.connect(snapshot);
 if (workspace.stackingOrderChanged) workspace.stackingOrderChanged.connect(snapshot);  // not in every KWin
 snapshot();
+
+// The mouse cursor, for his squirrel moments: at most about 15 updates a second.
+let lastCursor = 0;
+if (workspace.cursorPosChanged) {
+    workspace.cursorPosChanged.connect(function () {
+        const now = Date.now();
+        if (now - lastCursor < 66) return;
+        lastCursor = now;
+        const p = workspace.cursorPos;
+        callDBus(SERVICE, PATH, IFACE, "Cursor", p.x, p.y);
+    });
+}

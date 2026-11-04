@@ -37,7 +37,7 @@ def launch(script):
 
 
 class Tray(QSystemTrayIcon):
-    def __init__(self, settings, quit_fn, parent=None):
+    def __init__(self, settings, quit_fn, parent=None, focus=None, unfocus=None):
         super().__init__(buddy_icon(), parent)
         self.settings = settings
         self.window = None
@@ -52,6 +52,12 @@ class Tray(QSystemTrayIcon):
         menu.addAction(self.pause)
         menu.addAction(self.quiet)
         menu.addSeparator()
+        if focus:  # the ADHD engine's focus timer: he sits quietly with you until break time
+            timer = menu.addMenu("Focus timer")
+            for minutes in (25, 50):
+                timer.addAction(f"{minutes} minutes").triggered.connect(lambda _, m=minutes: focus(m))
+            timer.addAction("Stop").triggered.connect(unfocus)
+            menu.addSeparator()
         menu.addAction("Settings…").triggered.connect(self.open_settings)
         menu.addSeparator()
         menu.addAction("Quit").triggered.connect(quit_fn)

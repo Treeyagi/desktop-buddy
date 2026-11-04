@@ -36,6 +36,7 @@ from PyQt6.QtGui import QPainter  # noqa: E402
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QWidget  # noqa: E402
 
 import character.rig as rig  # noqa: E402
+from character.adhd import TANGENTS  # noqa: E402
 from character.behavior import ACTIONS, GREETINGS, QUIPS, Buddy  # noqa: E402
 from character.scenes import SCENES  # noqa: E402
 from core.bus import Bus  # noqa: E402
@@ -110,6 +111,7 @@ class Controller(QObject):
         # Plasma numbers screens with the primary as 0, then the rest in order
         self.screens = [app.primaryScreen()] + [s for s in app.screens() if s != app.primaryScreen()]
         self.bus = Bus()
+        self.settings_seen = None
         self.settings = SettingsFile(self)
         s = self.settings.data
         screen = self.pick_screen(s)
@@ -127,12 +129,15 @@ class Controller(QObject):
         app.aboutToQuit.connect(self.voice.shutdown)  # never leave the mic recording
         self.voice.apply(self.settings.data)
         self.bus.subscribe("voice.listening", self._on_listening)
+        self.attention = load("attention", "engine").AttentionEngine(self.bus, parent=self)
+        self.attention.apply(self.settings.data)
         self.buddy.set_screen(screen.name(), screen.geometry().topLeft())
         if args.action:  # after the watchers, so he already knows the icons and windows
             QTimer.singleShot(400, lambda: self.buddy.force(args.action))
         self.tray = None
         if QSystemTrayIcon.isSystemTrayAvailable():
-            self.tray = Tray(self.settings, app.quit, parent=self)
+            self.tray = Tray(self.settings, app.quit, parent=self,
+                             focus=self.attention.start_focus, unfocus=self.attention.stop_focus)
             self.tray.show()
         else:
             print("no system tray found; open settings with: python3 settings/window.py")
@@ -157,11 +162,17 @@ class Controller(QObject):
                 msg = json.loads(bytes(sock.readLine()).decode())
             except ValueError:
                 continue
+            if isinstance(msg, dict) and "focus" in msg:  # the settings window's focus timer buttons
+                minutes = int(msg["focus"] or 0)
+                self.attention.start_focus(minutes) if minutes > 0 else self.attention.stop_focus()
+                self.bus.publish("buddy.interaction", "focus")
+                continue
             if isinstance(msg, dict) and msg.get("do"):
                 if self.overlay.paused:
                     self.settings.set(paused=False)  # asking for a move means you want to see it
                 text = msg.get("text")
                 self.buddy.do_now(str(msg["do"]), str(text)[:200] if text else None)
+                self.bus.publish("buddy.interaction", "do-now")
 
     def _on_listening(self, down):
         if down and self.settings.data.get("paused"):
@@ -200,6 +211,12 @@ class Controller(QObject):
         rig.set_shoes(str(s.get("shoes", "hot pink")))
         b.quips = [q for q in (s.get("quips") or QUIPS) if str(q).strip()] or list(QUIPS)
         b.greetings = [q for q in (s.get("greetings") or GREETINGS) if str(q).strip()] or list(GREETINGS)
+        b.tangents = [q for q in (s.get("tangents") or TANGENTS) if str(q).strip()] or list(TANGENTS)
+        if hasattr(self, "attention"):
+            if self.settings_seen is not None and s != self.settings_seen:
+                self.bus.publish("buddy.interaction", "settings")  # fiddling with his settings counts
+            self.attention.apply(s)
+        self.settings_seen = dict(s)
         screen = self.pick_screen(s)
         if screen is not self.overlay.home:  # layer-shell windows can't move: make a new one there
             old = self.overlay

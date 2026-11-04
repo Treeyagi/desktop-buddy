@@ -29,6 +29,13 @@ DEFAULTS = {
     "icon_visits": True,  # clearance-aisle trips to your real desktop icons
     "new_file_reaction": True,
     "companion_bee": True,
+    # ADHD brain (attention/)
+    "adhd_squirrel": True,    # chases the mouse cursor now and then
+    "adhd_distract": True,    # windows you switch to and new sounds catch his eye
+    "adhd_tangents": True,    # "wait, unrelated, but..."
+    "adhd_mood": True,        # grumpy when ignored, smug when right
+    "nudge_minutes": 60,      # nudge after this long on one window; 0 = never
+    "tangents": None,         # his tangent lines; None = the built-in ones
     "fullscreen_hide": True,  # hide while a fullscreen app (game, video) is on his monitor
     # look and sayings
     "shoes": "hot pink",  # a style from character/rig.py SHOE_STYLES

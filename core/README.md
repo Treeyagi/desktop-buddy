@@ -19,4 +19,7 @@ Event bus and shared config. Every other module talks only through this, so none
 | `voice.thinking` | the transcript, while Claude works | voice-in | character (thought cloud) |
 | `voice.reply` | `{"text", "error", "heard"}` | voice-in | character (answer) |
 | `voice.cancel` | `None`, for a tap too short to be speech | voice-in | character |
+| `desktop.cursor` | `QPointF`, the mouse pointer in global coordinates | desktop-awareness | attention, character (chasing) |
+| `buddy.interaction` | a short reason string, when you interact with him | overlay | attention (mood) |
+| `attention.*` | see `attention/README.md` | attention | character |
 | `desktop.windows` | `list[DesktopWindow]`, bottom to top, on every window change | desktop-awareness | character (hidden icons, perching), overlay (fullscreen hiding) |

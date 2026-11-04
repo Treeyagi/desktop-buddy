@@ -2,7 +2,7 @@
 
 An Ace Ventura-style cartoon version of me that lives on my CachyOS (KDE) desktop as a transparent overlay. He walks around, jumps, hums to himself, reacts to icons and windows, and answers voice questions on a hotkey, with a snarky raw-philosopher personality that always ends with a solution.
 
-**Status:** v0.1.0. He lives on the desktop: a full animated character with bee buddies, scenes (clearance aisle, card vending machine, sitting on windows), awareness of your real desktop icons and windows, a tray icon and settings window, Claude answers in his personality, and push-to-talk with local Whisper. Not built yet: voice out (his cloned voice) and the ADHD attention engine.
+**Status:** v0.1.0. He lives on the desktop: a full animated character with bee buddies, scenes (clearance aisle, card vending machine, sitting on windows), awareness of your real desktop icons and windows, a tray icon and settings window, Claude answers in his personality, and push-to-talk with local Whisper. Since v0.1.0: the ADHD engine (squirrel moments, distractions, tangents, nudges, moods, a focus timer) and the My voice recording tab. Not built yet: voice out (his cloned voice).
 
 ## Run him
 ```bash

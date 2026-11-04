@@ -7,6 +7,7 @@ virtual desktop changes. The script is unloaded again when the buddy quits.
 
 Publishes on the bus (see core/README.md):
   desktop.windows   list[DesktopWindow], bottom of the stack first
+  desktop.cursor    QPointF, the mouse pointer in global coordinates (about 15 a second while it moves)
 
 Run it directly to print what KWin reports:  python3 desktop-awareness/windows.py
 """
@@ -14,7 +15,7 @@ import json
 import os
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QObject, QRectF, pyqtClassInfo, pyqtSlot
+from PyQt6.QtCore import QObject, QPointF, QRectF, pyqtClassInfo, pyqtSlot
 from PyQt6.QtDBus import QDBusConnection, QDBusInterface
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -44,13 +45,17 @@ class DesktopWindow:
 
 @pyqtClassInfo("D-Bus Interface", SERVICE)
 class _Receiver(QObject):
-    def __init__(self, on_update):
+    def __init__(self, on_update, on_cursor):
         super().__init__()
-        self.on_update = on_update
+        self.on_update, self.on_cursor = on_update, on_cursor
 
     @pyqtSlot(str)
     def Update(self, data):
         self.on_update(data)
+
+    @pyqtSlot(int, int)
+    def Cursor(self, x, y):
+        self.on_cursor(x, y)
 
 
 class WindowWatcher(QObject):
@@ -58,7 +63,7 @@ class WindowWatcher(QObject):
         super().__init__(parent)
         self.bus = bus
         self.windows = []
-        self.receiver = _Receiver(self._update)
+        self.receiver = _Receiver(self._update, lambda x, y: self.bus.publish("desktop.cursor", QPointF(x, y)))
         session = QDBusConnection.sessionBus()
         if not session.registerService(SERVICE):
             print("desktop-awareness: another buddy already has the window service")

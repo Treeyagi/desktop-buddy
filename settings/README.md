@@ -29,6 +29,8 @@ The tray icon, the settings window, and the settings file they share with the ru
 | `vending_pity` | Added to the odds for each sold-out in a row (default +15%, capped at 95% total); a win resets it |
 | `icon_visits` | Clearance-aisle trips to your real desktop icons. Off means floor finds only |
 | `new_file_reaction` | A new file on the desktop gets checked out next ("ooh, new!") |
+| `adhd_squirrel`, `adhd_distract`, `adhd_tangents`, `adhd_mood` | ADHD brain switches (see `attention/README.md`) |
+| `nudge_minutes` | Nudge after this long on one window; 0 means never (default 60) |
 | `companion_bee` | The bee that hangs around him. Off means it buzzes away; helper bees still fly in for icon errands and lifts |
 
 **Do it now:** each row has a button that makes the running buddy drop what he's doing and do that move right away. He tidies up first: anything he's holding sparkles away, errands get called off, and if he's in the air he floats down first. The window sends `{"do": "<name>"}` over a local socket (`desktop-buddy-<uid>`) that the overlay listens on. A request while he's paused un-pauses him. If he isn't running, the window's preview does basic moves instead.

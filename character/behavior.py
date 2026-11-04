@@ -17,6 +17,7 @@ from character.effects import Effects
 from character.props import Machine
 from character.moves import dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, skeleton, to_world
+from character.adhd import ADHD_ACTIONS, AdhdMixin
 from character.scenes import SCENES, SceneMixin
 
 # name: (weight when picked at random, duration range in seconds)
@@ -62,7 +63,7 @@ class Follower:
         self.y += self.vy * dt
 
 
-class Buddy(SceneMixin):
+class Buddy(SceneMixin, AdhdMixin):
     def __init__(self, width, floor, scale=1.0, demo=False, bus=None, screen_id=0):
         self.width, self.floor, self.scale = width, floor, scale
         self.x = width * 0.3
@@ -121,6 +122,7 @@ class Buddy(SceneMixin):
             bus.subscribe("desktop.windows", self._on_windows)
             bus.subscribe("desktop.icons", self._on_icons)
             bus.subscribe("desktop.icon_added", self._on_icon_added)
+        self._adhd_init(bus)
         self.enter("walk" if demo else "idle")
 
     def set_area(self, width, floor):
@@ -208,7 +210,7 @@ class Buddy(SceneMixin):
 
     def do_now(self, name, text=None):
         """Do this right now (the settings window's "Do it now" and "Say it now")."""
-        if name not in ACTIONS and name not in SCENES and name not in VOICE_ACTIONS | {"walk", "notice"}:
+        if name not in ACTIONS and name not in SCENES and name not in VOICE_ACTIONS | ADHD_ACTIONS | {"walk", "notice"}:
             return
         self.interrupt()
         if self.air > 1:  # land first
@@ -272,6 +274,9 @@ class Buddy(SceneMixin):
         if self.do_after_landing:
             (name, text), self.do_after_landing = self.do_after_landing, None
             return self._setup(name, text)
+        adhd = self.adhd_next()  # focus timer, a nudge he still owes you
+        if adhd:
+            return adhd
         if self.pending_icon and self.air < 1 and not self.quiet and self.scenes_enabled:
             icon, self.pending_icon = self.pending_icon, None
             if self.icon_visible(icon):  # can't see it behind a window? then he didn't notice
@@ -289,9 +294,9 @@ class Buddy(SceneMixin):
                 weights.update(SCENES)
             for n in weights:
                 if n in CALM:
-                    weights[n] *= 1.6 - self.activity
+                    weights[n] *= (1.6 - self.activity) * (1 - 0.3 * self.mood)
                 elif n in LIVELY:
-                    weights[n] *= 0.4 + 1.2 * self.activity
+                    weights[n] *= (0.4 + 1.2 * self.activity) * (1 + 0.6 * self.mood)
                 b = self.behaviors.get(n, {})
                 weights[n] *= float(b.get("often", 1.0)) if b.get("on", True) else 0.0
             if self.quiet:
@@ -318,6 +323,7 @@ class Buddy(SceneMixin):
         if self.air > 0.01:
             pose = self._float(replace(pose))
 
+        pose = self.adhd_mood(pose)
         if pose.eyes == "open":
             self.blink_in -= dt
             if self.blink_in <= 0:
@@ -396,6 +402,7 @@ class Buddy(SceneMixin):
         self.hive.draw(p)
         self.fx.draw(p)
         self.draw_thought(p)
+        self.draw_focus_timer(p)
         if self.bubble:
             self._draw_bubble(p)
 
@@ -540,8 +547,9 @@ class Buddy(SceneMixin):
         return pose
 
     def _start_idle(self):
+        grumpy = getattr(self, "mood", 0.2) < -0.2  # no happy humming when he's in a mood
         self.data["kind"] = random.choices(["breathe", "belly", "scratch", "hum", "tap"],
-                                           [3, 2, 2, 3, 1.5])[0]
+                                           [3, 0 if grumpy else 2, 2, 0 if grumpy else 3, 3 if grumpy else 1.5])[0]
 
     def _idle(self, dt):
         t = self.t
