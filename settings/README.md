@@ -30,7 +30,7 @@ The tray icon, the settings window, and the settings file they share with the ru
 | `vending_pity` | Added to the odds for each sold-out in a row (default +15%, capped at 95% total); a win resets it |
 | `icon_visits` | Clearance-aisle trips to your real desktop icons. Off means floor finds only |
 | `new_file_reaction` | A new file on the desktop gets checked out next ("ooh, new!") |
-| `adhd_squirrel`, `adhd_distract`, `adhd_tangents`, `adhd_react`, `adhd_mood` | ADHD brain switches (see `attention/README.md`) |
+| `adhd_squirrel`, `adhd_distract`, `adhd_tangents`, `adhd_react`, `adhd_dance`, `adhd_mood` | ADHD brain switches (see `attention/README.md`) |
 | `nudge_minutes` | Nudge after this long on one window; 0 means never (default 60) |
 | `companion_bee` | The bee that hangs around him. Off means it buzzes away; helper bees still fly in for icon errands and lifts |
 
@@ -59,7 +59,8 @@ The Sayings tab edits both lists. Double-click a line to edit it; there are Add,
 | `voice_hotkey` | The push-to-talk key (default Meta+Space). The window checks it against your other KDE shortcuts |
 | `voice_mic` | A PipeWire source name, or `null` for the system default mic |
 | `whisper_model` | `tiny.en`, `base.en` (default) or `small.en`; the Voice section downloads them, with a progress bar |
-| `hum_enabled` | He hums a quiet original house-style loop on about half of his happy walks (default on) |
+| `hum_enabled` | He hums on about half of his happy walks, as a text bubble (default on) |
+| `hum_sound` | The hum also plays as sound (default off: the synth tone sounded robotic) |
 | `voice_out_loud` | He speaks his answers in your cloned voice (voice-out/README.md); default on |
 
 The Voice section also has "Hold to test": it records and transcribes right in the window.

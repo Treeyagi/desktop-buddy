@@ -208,6 +208,7 @@ class Controller(QObject):
                 b.set_scale(size)
         b.activity = max(0.0, min(1.0, float(s.get("activity", 0.5))))
         b.quiet = bool(s.get("quiet", False))
+        b.hums = bool(s.get("hum_enabled", True))
         b.behaviors = s.get("behaviors") or {}
         b.vend_odds = max(0.0, min(1.0, float(s.get("vending_odds", 0.5))))
         b.vend_pity = max(0.0, min(1.0, float(s.get("vending_pity", 0.15))))

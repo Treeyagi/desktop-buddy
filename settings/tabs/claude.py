@@ -150,7 +150,7 @@ class ClaudeTab:
         self.out_loud = QCheckBox("Answer out loud in my voice (needs the voice server: see voice-out/README.md)")
         self.out_loud.toggled.connect(lambda on: not self._syncing and self._queue(voice_out_loud=on))
         form.addRow("", self.out_loud)
-        self.hum = QCheckBox("Hum quietly to himself on happy walks (never during a call)")
+        self.hum = QCheckBox("Hum to himself on happy walks (shown in a bubble, no sound for now)")
         self.hum.toggled.connect(lambda on: not self._syncing and self._queue(hum_enabled=on))
         form.addRow("", self.hum)
         form.addRow("", self._hint("Your voice is turned into text on this computer by Whisper; only the "

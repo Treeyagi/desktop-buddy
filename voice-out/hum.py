@@ -1,4 +1,5 @@
-"""Quiet humming while he walks. Original little house-style melodies (124 BPM, A minor pentatonic,
+"""Quiet humming while he walks (sound is OFF by default: the `hum_sound` setting. The synth tone sounded
+robotic, so for now he only hums in a text bubble). Original little house-style melodies (124 BPM, A minor pentatonic,
 off-beat notes) made from scratch with a soft vibrato "mm" tone, so there are no real songs or
 samples in here. Played very quietly, never during a call.
 
@@ -82,7 +83,7 @@ class Hummer(QObject):
         bus.subscribe("buddy.hum", self._hum)
 
     def apply(self, s):
-        self.on = bool(s.get("hum_enabled", True)) and not s.get("quiet")
+        self.on = bool(s.get("hum_enabled", True)) and bool(s.get("hum_sound", False)) and not s.get("quiet")
         if not self.on:
             self.stop()
 

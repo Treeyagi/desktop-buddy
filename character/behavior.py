@@ -63,6 +63,9 @@ class Follower:
         self.y += self.vy * dt
 
 
+HUM_LINES = ["mm-hm-hmmm~", "doo doo da-doo~", "mm mm mmm-mm~", "hm hm-hm hmmm~", "dun dun dun-dun~"]
+
+
 class Buddy(SceneMixin, AdhdMixin):
     def __init__(self, width, floor, scale=1.0, demo=False, bus=None, screen_id=0):
         self.width, self.floor, self.scale = width, floor, scale
@@ -124,7 +127,10 @@ class Buddy(SceneMixin, AdhdMixin):
             bus.subscribe("desktop.icons", self._on_icons)
             bus.subscribe("desktop.icon_added", self._on_icon_added)
         self.bus = bus
-        self.humming = False      # a happy walk with a quiet hum playing (voice-out/hum.py)
+        self.humming = False      # a happy walk with a hum bubble (and sound, if hum_sound is on)
+        self.hums = True          # the "hum" setting
+        self.music_on = False     # music is playing from a browser or player (attention.music)
+        self.dance_at = 0.0
         self.mouth_level = None   # from the audio while he speaks out loud
         self.speech_seconds = 0.0
         self._adhd_init(bus)
@@ -519,8 +525,11 @@ class Buddy(SceneMixin, AdhdMixin):
         self.facing = 1 if d["target"] >= self.x else -1
 
     def _hum(self, on):
+        on = on and self.hums
         if on != self.humming:
             self.humming = on
+            if on:
+                self.say(random.choice(HUM_LINES), life=2.6)   # text only; hum sound is off (see hum_sound)
             if self.bus:
                 self.bus.publish("buddy.hum", on)
 

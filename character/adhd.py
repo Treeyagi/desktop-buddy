@@ -43,6 +43,7 @@ class AdhdMixin:
         bus.subscribe("attention.gaze", self._on_gaze)
         bus.subscribe("attention.tangent", lambda _: self._free() and self.enter("tangent"))
         bus.subscribe("attention.nudge", self._on_nudge)
+        bus.subscribe("attention.music", self._on_music)
         bus.subscribe("attention.react", lambda r: self._free() and self.enter("quip", text=r["text"]))
         bus.subscribe("attention.smug", lambda _: self._free() and self.enter("smug"))
         bus.subscribe("attention.sulk", lambda _: self._free() and self.enter("sulk"))
@@ -109,8 +110,20 @@ class AdhdMixin:
         self.enter("dance")
         self.say("break time! nice work.", life=3.0, force=True)
 
+    def _on_music(self, on):
+        self.music_on = bool(on)
+        self.dance_at = 0.0   # he starts dancing at the next chance
+        if on and self._free():
+            self.say(random.choice(["ooh, a bop!", "okay okay, I hear you.", "this one slays.", "music? say less."]),
+                     life=2.2)
+            self.enter("dance")
+            self.dance_at = time.monotonic() + random.uniform(35, 60)
+
     def adhd_next(self):
         """Called by pick_next before anything random."""
+        if self.music_on and not self.quiet and self.scenes_enabled and time.monotonic() > self.dance_at:
+            self.dance_at = time.monotonic() + random.uniform(35, 60)   # keeps dancing every so often while it plays
+            return "dance", {}
         if self.focus_until is not None:
             return "focus_sit", {}
         if self.pending_nudge:

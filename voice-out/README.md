@@ -31,4 +31,6 @@ uv pip install --python ~/.local/share/desktop-buddy/tts/.venv/bin/python chatte
 The `setuptools<81` pin is needed because Chatterbox's watermark library imports `pkg_resources`. Chatterbox adds an inaudible watermark to its speech.
 
 ## Humming (`hum.py`)
+**Sound is off by default** (`hum_sound`): the synthesized tone sounded robotic, so for now he only hums in a text bubble ("mm-hm-hmmm~"). The code below is kept for when it's worth bringing back, for example with a better sound.
+
 On about half of his happy (content or cheery) walks he hums. The six two-bar melodies are made from scratch the first time (124 BPM, A minor pentatonic, off-beat notes, a soft vibrato "mm" tone) and kept in `~/.cache/desktop-buddy/hum*.wav`, so no real songs or samples are used. They play at 12% volume with `pw-play`, never during a call, and stop with the "Hum quietly" setting or quiet mode. His mouth makes a small "mm" while he does.

@@ -11,6 +11,7 @@ Publishes:
   attention.nudge      str: you've been on one window a long time
   attention.smug       None: you took his advice ("told ya")
   attention.sulk       None: he's been ignored a while
+  attention.music      bool: music is playing from a browser or a music player (True/False on change)
   attention.react      {"kind": str, "text": str}: a comment on what you're doing (video, code, game, late night)
   attention.mood       float, -1 grumpy .. 1 delighted
   attention.focus      {"until": monotonic seconds, "minutes": n} or None when stopped
@@ -52,6 +53,10 @@ LATE = [
     "the late hours again? water, then bed. I mean it.",
     "even I'm sleepy. and I'm a drawing.",
 ]
+# apps whose audio counts as music: browsers (YouTube, Spotify web...) and music players
+MUSIC_APPS = re.compile(r"firefox|chrom|brave|vivaldi|opera|librewolf|zen|floorp|falkon|epiphany|spotify|vlc|mpv|"
+                        r"strawberry|elisa|rhythmbox|amarok|audacious|clementine|lollypop|deadbeef|tidal|"
+                        r"youtube|celluloid|haruna|amberol|supersonic|cider|plexamp", re.I)
 REACT_COOLDOWN = 8 * 60   # seconds between comments on what you're doing
 LATE_HOURS = (0, 4)       # midnight to 4 a.m.
 
@@ -78,6 +83,8 @@ class AttentionEngine(QObject):
         self.cool = {"squirrel": 0.0, "gaze": 0.0, "tangent": now + random.uniform(240, 600),
                      "sulk": now + 600, "sound": 0.0}
         self.streams = None
+        self.music = False
+        self.music_votes = 0
         self.activity = None
         self.react_at = 0.0
         self.late_at = 0.0
@@ -180,11 +187,20 @@ class AttentionEngine(QObject):
         try:
             out = subprocess.run(["pactl", "-f", "json", "list", "sink-inputs"], capture_output=True,
                                  text=True, timeout=2)
-            playing = {s["index"] for s in json.loads(out.stdout) if not s.get("corked")}
+            live = [s for s in json.loads(out.stdout) if not s.get("corked")]
+            playing = {s["index"] for s in live}
+            music = any(MUSIC_APPS.search(" ".join((s.get("properties") or {}).get(k, "") for k in
+                        ("application.name", "application.process.binary"))) for s in live)
         except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
             return
         new = self.streams is not None and bool(playing - self.streams)
         self.streams = playing
+        # music needs two polls in a row to start or stop, so a notification ping doesn't count
+        self.music_votes = max(0, min(2, self.music_votes + (1 if music else -1)))
+        want = self.on("adhd_dance") and (self.music_votes >= 2 or (self.music and self.music_votes > 0))
+        if want != self.music:
+            self.music = want
+            self.bus.publish("attention.music", want)
         now = time.monotonic()
         if new and self.on("adhd_distract") and not self.calm() and now > self.cool["sound"] \
                 and random.random() < 0.5:
