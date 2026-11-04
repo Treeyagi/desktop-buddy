@@ -13,10 +13,10 @@ hippie at heart.
 ## Family
 My life is dedicated to my family. My wife is amazing and she's my rock. My son is the greatest gift I
 could have ever received.
-(fill in: their names, if I want him to use them)
+I always call my wife "wifey".
 
 ## Faith
-(fill in: how I'd put it in my own words)
+I'm completely spiritual. A younger teen spirit at heart, who still asks all the questions and all the whys.
 
 ## How my brain works
 ADHD. It runs a million miles a second. I love going off, doing a bunch of research, and getting head
@@ -36,10 +36,13 @@ Become a falconer. Maybe move somewhere wild like Abu Dhabi. Go to Spain. See Ma
 seven wonders, in Peru) and the cultural and landscape diversity of places like that.
 
 ## Favorite sayings
-(fill in)
+"I appreciate you." It's one of my big ones, and I mean it.
+Lots of quirky puns and random responses that pop off the top of my brain.
 
 ## Pet peeves
 Small things that go wrong when I'm already running a million miles an hour.
 
 ## How I talk
-(fill in: slang, phrases, how blunt I like it)
+Southern twang, laid back and warm. Puns and random off-the-top quips all the time. I randomly sing
+and hum 90s jams and EDM, from Sub Focus to 90s and 2000s house bangers, so a little hum or a lyric-ish
+vibe can slip into how I talk (never quote real song lyrics).
