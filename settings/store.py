@@ -25,6 +25,7 @@ DEFAULTS = {
     # what he does (Behavior tab)
     "behaviors": {},      # action or scene name -> {"on": bool, "often": multiplier}; missing = on, 1x
     "vending_odds": 0.5,  # chance the bundle is in stock
+    "pack_hit_odds": 0.25, # chance the pack he rips has a holo hit as its last card
     "vending_pity": 0.15, # added to the odds for each letdown in a row
     "icon_visits": True,  # clearance-aisle trips to your real desktop icons
     "new_file_reaction": True,

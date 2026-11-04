@@ -215,6 +215,7 @@ class Controller(QObject):
         b.hums = bool(s.get("hum_enabled", True))
         b.behaviors = s.get("behaviors") or {}
         b.vend_odds = max(0.0, min(1.0, float(s.get("vending_odds", 0.5))))
+        b.pack_odds = max(0.0, min(1.0, float(s.get("pack_hit_odds", 0.25))))
         b.vend_pity = max(0.0, min(1.0, float(s.get("vending_pity", 0.15))))
         b.icon_visits = bool(s.get("icon_visits", True))
         b.new_file_reaction = bool(s.get("new_file_reaction", True))

@@ -29,8 +29,8 @@ ACTIONS = {
     "dance": (1.6, (7.6, 11.4)),   # a routine of 4 to 6 moves (see _start_dance)
     "spores": (2.0, (4.6, 4.6)),
     "meditate": (1.0, (7.0, 8.0)),
-    "nap": (0.7, (8.0, 9.0)),
-    "stretch": (1.0, (2.8, 2.8)),
+    "nap": (0.4, (8.0, 9.0)),
+    "stretch": (0.4, (2.8, 2.8)),
     "quip": (1.4, (3.4, 3.4)),
 }
 DEMO_ORDER = ["walk", "kroger", "jump", "wave", "vending", "spores", "dance", "walk",
@@ -97,6 +97,7 @@ class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
         self.scenes_enabled = True   # off for small previews
         self.behaviors = {}          # name -> {"on": bool, "often": multiplier} (settings)
         self.vend_odds, self.vend_pity = 0.5, 0.15
+        self.pack_odds = 0.25   # chance the pack's last card is a hit (settings: pack_hit_odds)
         self.icon_visits = True      # kroger scenes use real desktop icons
         self.new_file_reaction = True
         self.do_after_landing = None
@@ -593,9 +594,9 @@ class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
         kinds = {"breathe": 3, "belly": 0 if grumpy else 2, "scratch": 2, "hum": 0 if grumpy else 3,
                  "tap": 3 if grumpy else 1.5,
                  # newer ones: chill moods yawn and stare at the sky, hyper ones box and swivel
-                 "yawn": 1.5 * (1.4 - hyper), "sky": 1.5 * (1.4 - hyper), "owl": 1.2, "neck": 1.0,
-                 "box": 0 if grumpy else 1.5 * (0.4 + hyper), "pebble": 1.2,
-                 "choose": 0 if grumpy else 1.0}
+                 "yawn": 0.15, "sky": 1.5, "owl": 1.5, "neck": 1.0,   # content, not sleepy: a yawn is rare
+                 "box": 0 if grumpy else 1.5 * (0.4 + hyper), "pebble": 1.5,
+                 "choose": 0 if grumpy else 1.5}
         kind = random.choices(list(kinds), list(kinds.values()))[0]
         self.data["kind"] = kind
         self.dur = max(self.dur, IDLE_CYCLE.get(kind, 0))   # a gesture gets to finish

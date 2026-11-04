@@ -28,6 +28,7 @@ The tray icon, the settings window, and the settings file they share with the ru
 | `behaviors` | Per action or scene: `{"on": bool, "often": multiplier}`. The slider runs from 1/4 as often to 4x; a missing entry means on, normal. Walking is always on (the Activity slider sets how much) |
 | `vending_odds` | Chance the bundle is in stock (default 50%) |
 | `vending_pity` | Added to the odds for each sold-out in a row (default +15%, capped at 95% total); a win resets it |
+| `pack_hit_odds` | Chance the last card of the pack he rips is the holo hit (default 25%); otherwise a common or energy and a good cry |
 | `icon_visits` | Clearance-aisle trips to your real desktop icons. Off means floor finds only |
 | `new_file_reaction` | A new file on the desktop gets checked out next ("ooh, new!") |
 | `dance_mode` | Dances nonstop, music or not (routines back to back, no pump opener); off by default |

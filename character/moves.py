@@ -164,9 +164,56 @@ def dance_twirl(b):
     return _party_face(pose, air)
 
 
+def dance_wipers(b):
+    """Both index fingers up, swinging side to side like windshield wipers, in time with the beat."""
+    sw = math.sin(b / 2)          # one full sweep every two beats
+    pose = Pose(bob=1.5 * abs(math.sin(b)) + 1, lean=2 * sw, hip_f=8 * sw, hip_b=-8 * sw, knee_f=10 + 8 * abs(sw),
+                knee_b=10 + 8 * abs(sw), head=6 * sw, hat=-4 * sw, look_x=0.4 * sw)
+    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 75, 105 - 65 * sw, 1.5, "point"   # forearm sweeps 180 +/- 65
+    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -75, -105 - 65 * sw, 1.5, "point"
+    return _party_face(pose, abs(sw))
+
+
+def dance_chicken(b):
+    """Elbows pumping like wings, head pecking forward on every beat, knees bent."""
+    flap = math.sin(b * 2)
+    peck = max(0.0, math.sin(b)) ** 2
+    pose = Pose(bob=2 + 2 * abs(flap), lean=8 * peck, head=-10 * peck + 4, knee_f=24 + 8 * flap, knee_b=24 - 8 * flap,
+                hip_f=8 * flap, hip_b=-8 * flap, look_x=0.8, sy=1 - 0.03 * peck)
+    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 80 + 10 * flap, -80 + 40 * flap, 1.0, "fist"
+    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -80 - 10 * flap, 80 - 40 * flap, 1.0, "fist"
+    pose.eyes, pose.mouth, pose.mouth_open, pose.blush = "open", "o", 0.25 * peck + 0.1, 0.6
+    return pose
+
+
+def dance_trex(b):
+    """Tiny T-rex arms twitching, big stomps side to side, head thrust forward."""
+    st = math.sin(b / 2)
+    hit = max(0.0, abs(math.sin(b / 2))) ** 3
+    pose = Pose(bob=-2 * hit + 2, lean=10, head=6 * math.sin(b), hip_f=20 * st, hip_b=-20 * st,
+                knee_f=8 + 38 * max(0.0, st), knee_b=8 + 38 * max(0.0, -st), sx=1 + 0.04 * hit, sy=1 - 0.04 * hit)
+    twitch = 6 * math.sin(b * 4)
+    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 18 + twitch, 120, 0.6, "open"
+    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -18 - twitch, -120, 0.6, "open"
+    pose.eyes, pose.mouth, pose.mouth_open, pose.brow, pose.blush = "open", "smile", 0.8 * hit + 0.2, 0.9, 0.4
+    pose.smile = 0.8
+    return pose
+
+
+def dance_floss(b):
+    """Arms swing hard one way while the hips go the other, bouncing on the beat."""
+    sw = math.sin(b)
+    pose = Pose(bob=2 * abs(math.cos(b)) , lean=-10 * sw, hip_f=-20 * sw, hip_b=20 * sw, knee_f=18, knee_b=18,
+                head=5 * sw, hat=-6 * sw)
+    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 15 + 70 * sw, 10, 1.1, "fist"
+    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -15 + 70 * sw, -10, 1.1, "fist"
+    return _party_face(pose, abs(sw))
+
+
 DANCE_MOVES = {"pump": dance_pose, "disco": dance_disco, "sprinkler": dance_sprinkler, "roof": dance_roof,
                "robot": dance_robot, "shuffle": dance_shuffle, "headbang": dance_headbang,
-               "hips": dance_hips, "twirl": dance_twirl}
+               "hips": dance_hips, "twirl": dance_twirl, "wipers": dance_wipers, "chicken": dance_chicken,
+               "trex": dance_trex, "floss": dance_floss}
 
 
 def fists_up(pose, pump=0.0):

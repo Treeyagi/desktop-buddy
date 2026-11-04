@@ -38,7 +38,7 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
 
 ## Actions
 - **walk:** sings or hums with notes, both arms swinging, head-bobbing to the beat. Sometimes he stops with "!", hands up, when something catches his eye.
-- **idle:** one of twelve, each with breathing and blinking (chill moods favor the yawn and sky-gazing, hyper ones the boxing; grumpy skips the happy ones):
+- **idle:** one of twelve, each with breathing and blinking (he is content, not sleepy: the yawn is rare, sky-gazing and the owl are common, hyper ones the boxing; grumpy skips the happy ones):
   - watching the bee buzz around
   - hand on his belly
   - scratching his beard
@@ -50,7 +50,7 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
   - preview one with `python3 character/preview.py out.png --actions idle:owl`
 - **jump:** crouch, then fists up in the air, then a squash landing. Sometimes a double hop.
 - **wave:** an open-hand wave with "hey hey!".
-- **dance:** a routine of 4 to 6 moves at 126 BPM, four beats each, crossfaded so nothing snaps. It always opens with the fist pump, then picks from: disco point, sprinkler, raise the roof, robot, running man (shuffle), headbang (EDM bounce, dust on the beat), hip circles, and a twirl (he squeezes thin and turns). Hearts, notes and sparkles come with it, and the bee loops around him. The moves are `dance_*` in `moves.py` (`DANCE_MOVES`); preview one with `python3 character/preview.py out.png --actions dance:disco`.
+- **dance:** a routine of 4 to 6 moves at 126 BPM, four beats each, crossfaded so nothing snaps. It always opens with the fist pump, then picks from: disco point, sprinkler, raise the roof, robot, running man (shuffle), headbang (EDM bounce, dust on the beat), hip circles, a twirl (he squeezes thin and turns), windshield wipers (both index fingers up, swinging to the beat), chicken (flapping elbows, pecking head), T-rex (tiny twitching arms, big stomps), and the floss. Hearts, notes and sparkles come with it, and the bee loops around him. The moves are `dance_*` in `moves.py` (`DANCE_MOVES`); preview one with `python3 character/preview.py out.png --actions dance:disco`.
 - **moment:** a walk-out moment: he stops and says something real, with a gesture for the kind (`moments.py`): *gratitude* (hand on heart, a small bow, hearts), *family* (a hug, swaying, hearts), *geek* (bouncing, hands everywhere, sparkling eyes), *dream* (pointing at the horizon), *vibes* (palms up, floating a little, spores), *calm* (one slow deep breath). Preview: `--actions moment:family`. The lines come from `brain/who-i-am.md`; no Claude call, no cost.
 - **turning:** whenever he turns around he does a quick squash and bounce instead of snapping.
 - **spores:** he shimmies until the mushroom on his hat puffs glowing spores, then stomps, and toadstools and flowers pop up around him.
@@ -78,7 +78,8 @@ A brand-new file on the desktop gets checked out next, with "ooh, new!".
 
 **vending:** the CARD-O-MATIC rises out of the floor. He hops with "!!", walks over, and stares at "CHECKING...", scratching his beard and tapping his foot. Two outcomes:
 - **Sold out:** a blank stare, "...sold out.", a sad tear, his shoulders drop, and he walks away slowly.
-- **In stock:** "IN STOCK?!" and he jumps for joy. He grabs the bundle and rips it open, and **The Ultimate Pull** happens: a giant holo card rises up behind him while he cries tears of joy with both fists up, like the reference card. Two extra bees cheer, then the card goes into his hat for safekeeping and he dances.
+- **In stock:** "IN STOCK?!" and he jumps for joy. He grabs the bundle and rips it open, then rummages through the pack, flicking nine cards over his shoulder ("nope.", "meh.") down to the tenth. If that last card is a hit (`pack_hit_odds`, 25%), **The Ultimate Pull** happens: a giant holo card rises up behind him while he cries tears of joy with both fists up, like the reference card. Two extra bees cheer, then the card goes into his hat for safekeeping and he dances.
+- **A dud pack:** the last card turns out to be a common or an energy. He stares, tears build, then he throws the wrapper and all the cards in the air ("WHYYY"), they scatter, bounce and fade, and a beat later he shakes it off with "...anyway!" and is his goofy self again. The cards are `card_back`, `common_card` and `energy_card` in `props.py`; tossed items fly under gravity (`Item.free`).
 
 The odds start at 50/50. Each letdown in a row adds 15% (the pity counter, capped at 90%) and a win resets it.
 

@@ -55,6 +55,14 @@ class BehaviorTab:
         row.addWidget(self.vend_pity, 1)
         row.addWidget(self.vend_pity_label)
         form.addRow("Pity per letdown", row)
+        self.pack_odds = QSlider(Qt.Orientation.Horizontal)
+        self.pack_odds.setRange(0, 100)
+        self.pack_odds_label = QLabel()
+        self.pack_odds.valueChanged.connect(self._vend_changed)
+        row = QHBoxLayout()
+        row.addWidget(self.pack_odds, 1)
+        row.addWidget(self.pack_odds_label)
+        form.addRow("Hit in the pack", row)
         form.addRow("", self._hint("Each sold-out in a row adds the pity to the odds (up to 95%); "
                                    "a win resets it."))
         outer.addWidget(vend)
@@ -134,7 +142,9 @@ class BehaviorTab:
     def _vend_changed(self, _=None):
         self.vend_odds_label.setText(f"{self.vend_odds.value()}%")
         self.vend_pity_label.setText(f"+{self.vend_pity.value()}%")
-        self._queue(vending_odds=self.vend_odds.value() / 100, vending_pity=self.vend_pity.value() / 100)
+        self.pack_odds_label.setText(f"{self.pack_odds.value()}%")
+        self._queue(vending_odds=self.vend_odds.value() / 100, vending_pity=self.vend_pity.value() / 100,
+                    pack_hit_odds=self.pack_odds.value() / 100)
 
     def _focus(self, minutes):
         sock = QLocalSocket()
@@ -165,6 +175,8 @@ class BehaviorTab:
             often.setEnabled(on.isChecked())
         self.vend_odds.setValue(int(round(float(s.get("vending_odds", 0.5)) * 100)))
         self.vend_pity.setValue(int(round(float(s.get("vending_pity", 0.15)) * 100)))
+        self.pack_odds.setValue(int(round(float(s.get("pack_hit_odds", 0.25)) * 100)))
+        self.pack_odds_label.setText(f"{self.pack_odds.value()}%")
         self.vend_odds_label.setText(f"{self.vend_odds.value()}%")
         self.vend_pity_label.setText(f"+{self.vend_pity.value()}%")
         self.icon_visits.setChecked(bool(s.get("icon_visits", True)))

@@ -27,6 +27,8 @@ from character.moves import dance_pose, fists_up, gait_pose, hold, hug, palms_up
 from character.props import ITEMS, Item, Machine, draw_item, ease_back, font
 from character.rig import GOLD, INK, Pose, _pen, draw_front_hand, ease, lerp, star_polygon
 
+RUMMAGE = 3.4   # seconds flipping through the pack before the last card turns over
+
 SCENES = {"kroger": 1.2, "vending": 0.6, "perch": 1.0}  # random-pick weights
 PERCH_LINES = ["nice view.", "best seat in the house.", "comfy.", "don't mind me."]
 
@@ -213,6 +215,21 @@ class SceneMixin:
                     for _ in range(14):
                         self.fx.sparkle(q.x, q.y, speed=120)
                     q.gone = True
+            elif q.free:
+                if not q.settled:
+                    q.vy += 2200 * s * dt
+                    q.x += q.vx * dt
+                    q.y += q.vy * dt
+                    q.angle += q.spin * dt
+                    ground = self.floor - 10 * s
+                    if q.y >= ground:
+                        q.y = ground
+                        if abs(q.vy) > 160 * s:   # a bounce or two, then it lies there
+                            q.vy *= -0.38
+                            q.vx *= 0.55
+                            q.spin *= 0.4
+                        else:
+                            q.settled = True
             elif q.carrier is not None:
                 q.x, q.y = q.carrier.x, q.carrier.y + 18 * s
                 if q.deliver_to is not None and q.carrier.arrived(14):  # back in its slot
@@ -618,7 +635,8 @@ class SceneMixin:
         joy = random.random() < min(0.95, self.vend_odds + self.vend_pity * self.pity)
         self.pity = 0 if joy else self.pity + 1
         d["joy"] = joy
-        self.dur = 12.4 if joy else 7.6
+        d["hit"] = joy and random.random() < self.pack_odds   # the pack itself is a long shot
+        self.dur = (12.4 + RUMMAGE if d["hit"] else 17.2) if joy else 7.6
         m.screen = "check"
 
     def _vending(self, dt):
@@ -689,20 +707,22 @@ class SceneMixin:
                 prize.gone = True
                 for _ in range(24):
                     self.fx.sparkle(prize.x, prize.y, speed=160)
-                card = Item("card", prize.x, prize.y, s, tag=False)
-                card.behind = True
-                card.size = 0.3
-                d["card"] = card
-                self.props.append(card)
             return hug(Pose(brow=0.9, quirk=1.0, mouth="o", mouth_open=0.5, look_x=0.6, look_y=0.6,
                             head=6, sparkle=0.6, sx=1 + 0.03 * math.sin(u * 40)))
+        if u < 3.6 + RUMMAGE:
+            return self._vending_rummage(u - 3.6, d)
+        u -= RUMMAGE
+        if self._once("flip"):
+            self._flip_last_card(d)
+        if not d["hit"]:
+            return self._vending_dud(u - 3.6, m)
         card = d["card"]
         if u < 6.6:  # THE ULTIMATE PULL: card up behind him, fists up, tears of joy
             k = ease((u - 3.6) / 0.6)
             top = self._anchor("C")
             card.rest = QPointF(lerp(card.x, top.x() - self.facing * 28 * s, k),
                                 lerp(card.y, top.y() - 62 * s, k))
-            card.size = lerp(0.3, 2.7, ease_back((u - 3.6) / 0.7))
+            card.size = lerp(0.6, 2.7, ease_back((u - 3.6) / 0.7))
             card.angle = -6 * self.facing + 3 * math.sin(u * 3)
             if self._once("pull"):
                 self.say("THE ULTIMATE PULL!!", life=2.6)
@@ -728,3 +748,92 @@ class SceneMixin:
         pose = dance_pose(b)
         pose.tears = max(0.0, 1 - (u - 6.6) / 1.2)
         return pose
+
+    def _toss(self, kind, x, y, vx, vy, spin, size=0.9):
+        """A card (or the empty wrapper) thrown into the air; it lands, bounces, lies there and fades."""
+        q = Item(kind, x, y, self.scale, tag=False)
+        q.size, q.free, q.vx, q.vy, q.spin = size, True, vx, vy, spin
+        q.expire = random.uniform(3.2, 4.2)
+        self.props.append(q)
+
+    def _vending_rummage(self, u, d):
+        """Flips through the pack one card at a time, tossing each over his shoulder, down to the last one."""
+        s = self.scale
+        card = d.get("card")
+        if card is None:   # the stack in his hand, face down
+            card = d["card"] = Item("card_back", d["prize"].x, d["prize"].y, s, tag=False)
+            card.size, card.grab = 0.9, 1.0
+            self.props.append(card)
+            self.say("okay, okay...", life=1.0)
+        n = int((u - 0.2) / 0.3) if u > 0.2 else -1
+        if 0 <= n < 9 and n > d.get("flicked", -1):   # nine flicked off, the tenth stays in his hand
+            d["flicked"] = n
+            self._toss(random.choice(["common_card", "energy_card"]), card.x, card.y,
+                       -self.facing * random.uniform(120, 260) * s, -random.uniform(300, 480) * s,
+                       random.uniform(-500, 500))
+            line = {2: "nope.", 5: "meh.", 7: "come ON."}.get(n)
+            if line:
+                self.say(line, life=0.8)
+        tense = ease((u - 2.6) / 0.8) if u > 2.6 else 0.0
+        if tense > 0 and self._once("last"):
+            self.say("...the last one.", life=1.6)
+        flick = max(0.0, math.sin((u - 0.2) * math.tau / 0.3)) if 0.2 < u < 2.6 else 0.0
+        self._every("spark", 0.1, lambda: self.fx.sparkle(card.x, card.y, speed=50) if tense > 0.3 else None)
+        return hug(Pose(brow=0.5 + 0.5 * tense, quirk=1.0, mouth="o", mouth_open=0.15 + 0.4 * tense, look_x=0.5,
+                        look_y=0.9, head=3 + 4 * flick, bob=1.5 * flick, sparkle=0.8 * tense,
+                        sx=1 + 0.03 * tense * math.sin(u * 45)))
+
+    def _flip_last_card(self, d):
+        """The tenth card turns over: the holo (a hit), or a common or an energy (a dud)."""
+        card = d["card"]
+        if d["hit"]:
+            card.kind, card.size, card.behind = "card", 0.6, True
+            card.rest = QPointF(card.x, card.y)
+            card.grab = 0.0
+        else:
+            card.kind = random.choice(["common_card", "energy_card"])
+            card.size = 1.3
+
+    def _vending_dud(self, k, m):
+        """A common or an energy at the back: tears build, the pack and cards fly, then he shakes it off."""
+        s = self.scale
+        d = self.data
+        card = d["card"]
+        if k < 1.0:   # staring at it
+            if self._once("dud"):
+                self.say("...an energy." if card.kind == "energy_card" else "...a common.", life=1.8)
+            return hug(Pose(brow=-0.1, mouth="o", mouth_open=0.2, look_y=0.9, smile=0.0, head=4, sy=0.99))
+        if k < 2.6:   # the tears build
+            a = ease((k - 1.0) / 1.6)
+            wob = math.sin(k * 25)
+            return hug(Pose(brow=-0.5 * a, smile=-0.8 * a, tears=a, look_y=0.9, head=8 * a + wob * 1.5 * a,
+                            lean=6 * a, mouth="smile", mouth_open=0.2 * a, bob=2 * a, hat=6 * a, blush=0.0,
+                            sx=1 + 0.012 * wob * a))
+        if k < 3.0:   # THROWS IT ALL
+            if self._once("toss"):
+                h = self._anchor("hand_f")
+                card.gone = True
+                for _ in range(10):
+                    self._toss(random.choice(["common_card", "energy_card", "card_back"]), h.x(), h.y(),
+                               random.uniform(-280, 280) * s, -random.uniform(550, 900) * s,
+                               random.choice((-1, 1)) * random.uniform(300, 900))
+                self._toss("bundle", h.x(), h.y(), -self.facing * 60 * s, -1050 * s, 720, size=0.85)
+                self.say("WHYYY", life=1.4)
+                self.fx.dust(self.x, self.floor, 5)
+                m.leave(delay=1.5)
+            return fists_up(Pose(lift=14, eyes="closed", mouth="o", mouth_open=1.0, tears=1.0, brow=-0.6,
+                                 lean=-6, sy=1.05), pump=1.0)
+        if k < 4.4:   # watching them rain down
+            a = ease((k - 3.0) / 0.5)
+            return Pose(lean=8 * a, head=10 * a, look_y=0.9, tears=1.0 - 0.3 * a, smile=-0.8, brow=-0.4,
+                        mouth="smile", mouth_open=0.2, bob=2 * a, hat=8 * a,
+                        sh_f=lerp(150, 6, a), el_f=lerp(10, 8, a), sh_b=lerp(-150, -6, a), el_b=lerp(-10, -8, a))
+        if self._once("anyway"):   # ...and back to his goofy self
+            self.say("...anyway!", life=1.6)
+            for _ in range(10):
+                self.fx.sparkle(*self._head_xy(random.uniform(-40, 40), -40), speed=80)
+        a = ease((k - 4.4) / 0.5)
+        hop = math.sin(min(1.0, (k - 4.4) / 0.6) * math.pi)
+        return palms_up(Pose(lift=16 * hop, eyes="happy", mouth="smile", mouth_open=0.6, smile=1.0, blush=0.8,
+                             tears=max(0.0, 0.7 - 2 * a), brow=0.4, quirk=0.8, sy=1 + 0.05 * hop, sparkle=0.6 * a))
+

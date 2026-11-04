@@ -7,7 +7,7 @@ with its feet at (0, 0). Both live in screen pixels like the effects.
 import math
 import random
 
-from PyQt6.QtCore import QPointF, QRectF
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import (QBrush, QColor, QConicalGradient, QFont, QLinearGradient, QPainter,
                          QPainterPath, QRadialGradient)
 
@@ -58,6 +58,9 @@ class Item:
         self.gone = False
         self.t = 0.0
         self.price = random.choice(PRICES)
+        self.free = False            # tossed: flies under gravity and lands (see SceneMixin.update_props)
+        self.settled = False
+        self.vx = self.vy = self.spin = 0.0
 
     def update(self, dt):
         self.t += dt
@@ -163,6 +166,74 @@ class _ItemArt:
         p.setBrush(QColor(255, 255, 255, 90))
         p.drawPath(shine)
         p.restore()
+
+    @staticmethod
+    def _plain_card(p, top, bottom, label, mark):
+        """A non-holo card: `mark(p)` draws the picture in the 25x21 art window."""
+        rect = QRectF(-15, -21, 30, 42)
+        p.setPen(_pen(INK, 1.6))
+        p.setBrush(QColor(250, 246, 236))
+        p.drawRoundedRect(rect, 2.6, 2.6)
+        art = QRectF(-12.5, -18.5, 25, 21)
+        g = QLinearGradient(0, art.top(), 0, art.bottom())
+        g.setColorAt(0, top)
+        g.setColorAt(1, bottom)
+        p.setPen(_pen(INK, 1))
+        p.setBrush(QBrush(g))
+        p.drawRect(art)
+        p.save()
+        p.setClipRect(art)
+        mark(p)
+        p.restore()
+        p.setPen(_pen(INK, 0.8))
+        p.setBrush(QColor(236, 232, 222))
+        p.drawRect(QRectF(-12.5, 3.5, 25, 5))
+        p.setFont(font(4))
+        p.setPen(INK)
+        p.drawText(QRectF(-12.5, 3.5, 25, 5), 0x0084, label)
+        p.setPen(_pen(QColor(170, 165, 150), 0.9))
+        for y in (11, 13.5, 16):
+            p.drawLine(QPointF(-10, y), QPointF(10, y))
+
+    @staticmethod
+    def card_back(p, t):
+        """Face-down: a deep blue back with a gold star, so it could be anything."""
+        rect = QRectF(-15, -21, 30, 42)
+        g = QLinearGradient(0, -21, 0, 21)
+        g.setColorAt(0, QColor(60, 70, 190))
+        g.setColorAt(1, QColor(100, 50, 170))
+        p.setPen(_pen(INK, 1.6))
+        p.setBrush(QBrush(g))
+        p.drawRoundedRect(rect, 2.6, 2.6)
+        p.setPen(_pen(QColor(235, 235, 255), 1.0))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRoundedRect(QRectF(-12, -18, 24, 36), 1.6, 1.6)
+        p.setPen(_pen(INK, 0.9))
+        p.setBrush(GOLD)
+        p.drawPolygon(star_polygon(0, 0, 8, spin=0.0))
+
+    @staticmethod
+    def common_card(p, t):
+        def blob(p):  # a plain little creature
+            p.setPen(_pen(INK, 0.9))
+            p.setBrush(QColor(190, 205, 150))
+            p.drawEllipse(QPointF(0, -5), 7.5, 6.5)
+            p.setBrush(INK)
+            p.drawEllipse(QPointF(-2.6, -6), 0.9, 0.9)
+            p.drawEllipse(QPointF(2.6, -6), 0.9, 0.9)
+        _ItemArt._plain_card(p, QColor(170, 200, 230), QColor(210, 225, 200), "COMMON", blob)
+
+    @staticmethod
+    def energy_card(p, t):
+        def bolt(p):  # a lightning bolt on a flat colour
+            p.setPen(_pen(INK, 0.9))
+            p.setBrush(QColor(255, 226, 60))
+            path = QPainterPath(QPointF(1.5, -16))
+            for x, y in ((-6, -4), (-1, -4), (-3, 1), (6, -7), (1, -7)):
+                path.lineTo(x, y)
+            path.closeSubpath()
+            p.drawPath(path)
+        _ItemArt._plain_card(p, QColor(90, 110, 150), QColor(60, 70, 110), "ENERGY", bolt)
 
     @staticmethod
     def icon(p, t, pixmap):
