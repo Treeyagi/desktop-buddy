@@ -15,7 +15,7 @@ from PyQt6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath
 from character.bees import Hive
 from character.effects import Effects
 from character.props import Machine
-from character.moves import dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
+from character.moves import DANCE_MOVES, dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, skeleton, to_world
 from character.adhd import ADHD_ACTIONS, AdhdMixin
 from character.scenes import SCENES, SceneMixin
@@ -25,7 +25,7 @@ ACTIONS = {
     "idle": (3.0, (2.8, 4.8)),
     "jump": (2.0, (1.25, 1.25)),
     "wave": (1.5, (2.4, 2.4)),
-    "dance": (1.6, (4.8, 4.8)),
+    "dance": (1.6, (7.6, 11.4)),   # a routine of 4 to 6 moves (see _start_dance)
     "spores": (2.0, (4.6, 4.6)),
     "meditate": (1.0, (7.0, 8.0)),
     "nap": (0.7, (8.0, 9.0)),
@@ -63,6 +63,7 @@ class Follower:
         self.y += self.vy * dt
 
 
+DANCE_BPM = 126   # house tempo; the dance moves and the notes follow it
 HUM_LINES = ["mm-hm-hmmm~", "doo doo da-doo~", "mm mm mmm-mm~", "hm hm-hm hmmm~", "dun dun dun-dun~"]
 
 
@@ -128,6 +129,7 @@ class Buddy(SceneMixin, AdhdMixin):
             bus.subscribe("desktop.icon_added", self._on_icon_added)
         self.bus = bus
         self.humming = False      # a happy walk with a hum bubble (and sound, if hum_sound is on)
+        self.last_facing, self.turn_t = self.facing, 1.0
         self.hums = True          # the "hum" setting
         self.music_on = False     # music is playing from a browser or player (attention.music)
         self.dance_at = 0.0
@@ -338,6 +340,16 @@ class Buddy(SceneMixin, AdhdMixin):
             pose = self._float(replace(pose))
 
         pose = self.adhd_mood(pose)
+        if self.facing != self.last_facing:   # turning around: a quick squash and bounce instead of a snap
+            self.last_facing = self.facing
+            self.turn_t = 0.0
+        if self.turn_t < 0.22:
+            self.turn_t += dt
+            k = math.sin(min(1.0, self.turn_t / 0.22) * math.pi)
+            if self.state != "dance":
+                pose.sx *= 1 - 0.28 * k
+                pose.sy *= 1 + 0.05 * k
+                pose.head += 6 * k
         if pose.eyes == "open":
             self.blink_in -= dt
             if self.blink_in <= 0:
@@ -667,16 +679,47 @@ class Buddy(SceneMixin, AdhdMixin):
                     mouth="smile", mouth_open=0.4, quirk=0.8, blush=0.6, look_x=0.7, look_y=-0.2,
                     head=4 * math.sin(self.t * 3), bob=1.5 * abs(w), sparkle=0.3)
 
+    def _start_dance(self):
+        """A routine: a few different moves, four beats each, picked at random (always opens with the pump)."""
+        beats = 4
+        self.data["seg"] = beats * 60.0 / DANCE_BPM
+        n = max(2, round(self.dur / self.data["seg"]))
+        if "routine" not in self.data:
+            others = random.sample([m for m in DANCE_MOVES if m != "pump"], min(n - 1, len(DANCE_MOVES) - 1))
+            self.data["routine"] = ["pump"] + others
+        self.dur = self.data["seg"] * len(self.data["routine"])
+
     def _dance(self, dt):
-        b = self.t * math.tau * 2.1
+        b = self.t * math.tau * DANCE_BPM / 60.0
         self.bee_mode = "dance"
-        if self.t > self.dur / 2 and self._once("flip"):
+        d = self.data
+        routine, seg = d["routine"], d["seg"]
+        i = min(len(routine) - 1, int(self.t / seg))
+        move = routine[i]
+        pose = DANCE_MOVES[move](b)
+        into = self.t - i * seg
+        if i > 0 and into < 0.3:   # crossfade from the move before, so nothing snaps
+            pose = lerp_pose(DANCE_MOVES[routine[i - 1]](b), pose, ease(into / 0.3))
+        if move == "twirl":
+            if self.dance_spin(b):
+                self.facing = -self.facing
+        elif self.t > self.dur / 2 and self._once("flip"):
             self.facing = -self.facing
-        pose = dance_pose(b)
-        self._every("heart", 0.7, lambda: self.fx.heart(*self._head_xy(random.uniform(-30, 30), -70)))
-        self._every("note", 0.45, lambda: self.fx.note(*self._head_xy(random.uniform(-40, 40), -50)))
-        self._every("spark", 0.15, lambda: self.fx.sparkle(*self._xy(self._anchor("hand_f")), speed=90))
+        self._every("heart", 0.9, lambda: self.fx.heart(*self._head_xy(random.uniform(-30, 30), -70)))
+        self._every("note", 0.5, lambda: self.fx.note(*self._head_xy(random.uniform(-40, 40), -50)))
+        if move in ("pump", "disco", "roof", "headbang"):
+            self._every("spark", 0.15, lambda: self.fx.sparkle(*self._xy(self._anchor("hand_f")), speed=90))
+        if move == "headbang" and abs(math.sin(b / 2)) > 0.97:
+            self._every("dust", 0.5, lambda: self.fx.dust(self.x, self.floor, 3))
         return pose
+
+    def dance_spin(self, b):
+        """True twice per spin, when he's edge-on: the moment to swap which way he faces."""
+        p = (b / math.tau / 4) % 1.0
+        edge = int(p * 2 + 0.5)   # 0 before the first edge-on moment, then 1, then 2
+        last = self.data.get("edge", 0)
+        self.data["edge"] = edge
+        return edge != last and edge in (1, 2)
 
     def _spores(self, dt):
         """Shakes his hat so the mushroom puffs glowing spores, stomps, and

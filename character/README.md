@@ -46,7 +46,8 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
   - arms crossed, tapping his foot
 - **jump:** crouch, then fists up in the air, then a squash landing. Sometimes a double hop.
 - **wave:** an open-hand wave with "hey hey!".
-- **dance:** fist pumps, hip sway, hearts and notes, with the bee looping around him.
+- **dance:** a routine of 4 to 6 moves at 126 BPM, four beats each, crossfaded so nothing snaps. It always opens with the fist pump, then picks from: disco point, sprinkler, raise the roof, robot, running man (shuffle), headbang (EDM bounce, dust on the beat), hip circles, and a twirl (he squeezes thin and turns). Hearts, notes and sparkles come with it, and the bee loops around him. The moves are `dance_*` in `moves.py` (`DANCE_MOVES`); preview one with `python3 character/preview.py out.png --actions dance:disco`.
+- **turning:** whenever he turns around he does a quick squash and bounce instead of snapping.
 - **spores:** he shimmies until the mushroom on his hat puffs glowing spores, then stomps, and toadstools and flowers pop up around him.
 - **meditate:** floats cross-legged with "ommm...".
 - **nap:** sits back, hand on belly, snoring z's while the bee naps on his hat mushroom. Then he wakes with "?!" and stretches.
