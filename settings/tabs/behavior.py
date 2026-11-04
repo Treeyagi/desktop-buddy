@@ -72,6 +72,10 @@ class BehaviorTab:
             box.addWidget(w)
         outer.addWidget(icons)
 
+        self.dance_mode = QCheckBox("Dance mode: he dances nonstop, music or not")
+        self.dance_mode.toggled.connect(lambda on: self._queue(dance_mode=on))
+        outer.addWidget(self.dance_mode)
+
         adhd = QGroupBox("ADHD brain")
         box = QVBoxLayout(adhd)
         self.adhd_boxes = {}
@@ -167,6 +171,7 @@ class BehaviorTab:
         self.new_files.setChecked(bool(s.get("new_file_reaction", True)))
         self.new_files.setEnabled(self.icon_visits.isChecked())
         self.companion.setChecked(bool(s.get("companion_bee", True)))
+        self.dance_mode.setChecked(bool(s.get("dance_mode", False)))
         for key, cb in self.adhd_boxes.items():
             cb.setChecked(bool(s.get(key, True)))
         self.nudge.setValue(int(s.get("nudge_minutes", 60) or 0))

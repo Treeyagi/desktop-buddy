@@ -56,6 +56,7 @@ DEFAULTS = {
     "whisper_model": "base.en",  # tiny.en | base.en | small.en
     "hum_enabled": True,         # hums on happy walks, as a text bubble
     "hum_sound": False,          # ...and as sound too (voice-out/hum.py; sounded robotic, so off)
+    "dance_mode": False,         # dances nonstop, music or not
     "adhd_dance": True,          # dances when music plays from a browser or a music player
     "voice_out_loud": True,      # voice-out/: speak answers in his cloned voice
 }

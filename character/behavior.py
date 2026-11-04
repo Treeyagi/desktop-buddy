@@ -133,6 +133,7 @@ class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
         self.humming = False      # a happy walk with a hum bubble (and sound, if hum_sound is on)
         self.last_facing, self.turn_t = self.facing, 1.0
         self.hums = True          # the "hum" setting
+        self.dance_mode = False   # settings: dance nonstop, music or not
         self.music_on = False     # music is playing from a browser or player (attention.music)
         self.dance_at = 0.0
         self.mouth_level = None   # from the audio while he speaks out loud
@@ -801,8 +802,11 @@ class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
         self.data["seg"] = beats * 60.0 / DANCE_BPM
         n = max(2, round(self.dur / self.data["seg"]))
         if "routine" not in self.data:
-            others = random.sample([m for m in DANCE_MOVES if m != "pump"], min(n - 1, len(DANCE_MOVES) - 1))
-            self.data["routine"] = ["pump"] + others
+            if self.dance_mode:   # nonstop: skip the pump opener so back-to-back routines vary
+                self.data["routine"] = random.sample(list(DANCE_MOVES), min(n, len(DANCE_MOVES)))
+            else:
+                others = random.sample([m for m in DANCE_MOVES if m != "pump"], min(n - 1, len(DANCE_MOVES) - 1))
+                self.data["routine"] = ["pump"] + others
         self.dur = self.data["seg"] * len(self.data["routine"])
 
     def _dance(self, dt):

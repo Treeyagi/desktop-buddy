@@ -208,6 +208,10 @@ class Controller(QObject):
                 b.set_scale(size)
         b.activity = max(0.0, min(1.0, float(s.get("activity", 0.5))))
         b.quiet = bool(s.get("quiet", False))
+        dance_mode = bool(s.get("dance_mode", False))
+        if dance_mode and not b.dance_mode and b._free():   # switched on: starts right away
+            b.enter("dance")
+        b.dance_mode = dance_mode
         b.hums = bool(s.get("hum_enabled", True))
         b.behaviors = s.get("behaviors") or {}
         b.vend_odds = max(0.0, min(1.0, float(s.get("vending_odds", 0.5))))

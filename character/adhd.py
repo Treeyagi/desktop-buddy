@@ -119,12 +119,14 @@ class AdhdMixin:
             self.say(random.choice(["ooh, a bop!", "okay okay, I hear you.", "this one slays.", "music? say less."]),
                      life=2.2)
             self.enter("dance")
-            self.dance_at = time.monotonic() + random.uniform(35, 60)
+            self.dance_at = time.monotonic() + random.uniform(12, 25)
 
     def adhd_next(self):
         """Called by pick_next before anything random."""
+        if self.dance_mode and not self.quiet and self.scenes_enabled:
+            return "dance", {}   # nonstop: the next routine starts as soon as this one ends
         if self.music_on and not self.quiet and self.scenes_enabled and time.monotonic() > self.dance_at:
-            self.dance_at = time.monotonic() + random.uniform(35, 60)   # keeps dancing every so often while it plays
+            self.dance_at = time.monotonic() + random.uniform(12, 25)   # keeps dancing often while it plays
             return "dance", {}
         if self.focus_until is not None:
             return "focus_sit", {}
