@@ -169,8 +169,8 @@ def dance_wipers(b):
     sw = math.sin(b / 2)          # one full sweep every two beats
     pose = Pose(bob=1.5 * abs(math.sin(b)) + 1, lean=2 * sw, hip_f=8 * sw, hip_b=-8 * sw, knee_f=10 + 8 * abs(sw),
                 knee_b=10 + 8 * abs(sw), head=6 * sw, hat=-4 * sw, look_x=0.4 * sw)
-    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 75, 105 - 65 * sw, 1.5, "point"   # forearm sweeps 180 +/- 65
-    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -75, -105 - 65 * sw, 1.5, "point"
+    pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 100, 70 - 40 * sw, 1.8, "point"   # forearm sweeps 170 +/- 40, held out wide so it never crosses his mouth
+    pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -100, 270 - 40 * sw, 1.8, "point"
     return _party_face(pose, abs(sw))
 
 

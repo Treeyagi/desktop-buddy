@@ -63,6 +63,7 @@ The Sayings tab edits both lists. Double-click a line to edit it; there are Add,
 | `whisper_model` | `tiny.en`, `base.en` (default) or `small.en`; the Voice section downloads them, with a progress bar |
 | `hum_enabled` | He hums on about half of his happy walks, as a text bubble (default on) |
 | `hum_sound` | The hum also plays as sound (default off: the synth tone sounded robotic) |
+| `voice_engine_unload` | Stops the voice engine after 2 idle minutes (frees about 5 GB of GPU) and loads it again on the next question; off by default. The Claude tab also has Start and Stop buttons with a live status |
 | `voice_out_loud` | He speaks his answers in your cloned voice (voice-out/README.md); default on |
 
 The Voice section also has "Hold to test": it records and transcribes right in the window.

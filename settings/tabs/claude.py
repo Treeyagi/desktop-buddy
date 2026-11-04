@@ -150,6 +150,23 @@ class ClaudeTab:
         self.out_loud = QCheckBox("Answer out loud in my voice (needs the voice server: see voice-out/README.md)")
         self.out_loud.toggled.connect(lambda on: not self._syncing and self._queue(voice_out_loud=on))
         form.addRow("", self.out_loud)
+        self.unload = QCheckBox("Unload the voice engine when I'm not using it (frees the GPU; the first answer after is slower)")
+        self.unload.toggled.connect(lambda on: not self._syncing and self._queue(voice_engine_unload=on))
+        form.addRow("", self.unload)
+        self.engine_start_btn = QPushButton("Start voice engine")
+        self.engine_stop_btn = QPushButton("Stop voice engine")
+        self.engine_start_btn.clicked.connect(lambda: self._engine("start"))
+        self.engine_stop_btn.clicked.connect(lambda: self._engine("stop"))
+        self.engine_status = self._hint("")
+        row = QHBoxLayout()
+        row.addWidget(self.engine_start_btn)
+        row.addWidget(self.engine_stop_btn)
+        row.addWidget(self.engine_status, 1)
+        form.addRow("Voice engine", row)
+        self.engine_timer = QTimer(self)
+        self.engine_timer.timeout.connect(self._refresh_engine)
+        self.engine_timer.start(2000)
+        self._refresh_engine()
         self.hum = QCheckBox("Hum to himself on happy walks (shown in a bubble, no sound for now)")
         self.hum.toggled.connect(lambda on: not self._syncing and self._queue(hum_enabled=on))
         form.addRow("", self.hum)
@@ -203,6 +220,29 @@ class ClaudeTab:
         if not self._syncing:
             self._queue(whisper_model=self.stt_model.currentData())
         self._refresh_stt_status()
+
+    def _engine(self, what):
+        sock = QLocalSocket()
+        sock.connectToServer(SOCKET)
+        if not sock.waitForConnected(300):
+            self.engine_status.setText("Start the buddy first.")
+            return
+        sock.write((json.dumps({"voice_engine": what}) + "\n").encode())
+        sock.flush()
+        sock.waitForBytesWritten(300)
+        sock.disconnectFromServer()
+        self.engine_status.setText("Starting..." if what == "start" else "Stopping...")
+        QTimer.singleShot(1500, self._refresh_engine)
+
+    def _refresh_engine(self):
+        """Ask the local voice server (127.0.0.1:8765) how it is; a quick local request."""
+        speak = load("voice-out", "speak")
+        state = speak.server_state() if speak.installed() else "missing"
+        text = {"ok": "Running (using about 5 GB of GPU memory).", "loading": "Loading the voice...",
+                "missing": "Not installed (see voice-out/README.md)."}.get(state, "Stopped.")
+        self.engine_status.setText(text)
+        self.engine_start_btn.setEnabled(state is None)
+        self.engine_stop_btn.setEnabled(state in ("ok", "loading"))
 
     def _refresh_stt_status(self):
         model = self.stt_model.currentData() or stt.DEFAULT_MODEL
@@ -338,4 +378,5 @@ class ClaudeTab:
         self.stt_model.setCurrentIndex(max(0, self.stt_model.findData(s.get("whisper_model", stt.DEFAULT_MODEL))))
         self._refresh_stt_status()
         self.out_loud.setChecked(bool(s.get("voice_out_loud")))
+        self.unload.setChecked(bool(s.get("voice_engine_unload", False)))
         self.hum.setChecked(bool(s.get("hum_enabled", True)))

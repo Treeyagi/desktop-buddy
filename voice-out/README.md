@@ -18,6 +18,10 @@ He speaks his answers in the user's cloned voice. Everything runs on this comput
 ## Where the time goes (measured)
 Speech to text 0.6 s, Claude's first sentence about 1.5 to 2.5 s (warm process), the voice about 1.5 to 2.5 s for that sentence: sound starts roughly 3 to 4 s after you let go of the key (it was about 10 s). He keeps answers to two short sentences (`brain/personality.md`), which is also what keeps the speech short.
 
+## Start, stop and unload
+- The Claude tab in Settings has **Start voice engine** and **Stop voice engine** buttons with a live status (it asks the server on 127.0.0.1:8765). They message the running buddy, which owns the server process.
+- **Unload when idle** (`voice_engine_unload`): the buddy stops the engine after 2 minutes without use and does not preload it at start. It loads again when you next press the talk key, so the first answer after a break is about 15 to 20 s slower.
+
 ## Shutting everything down
 - Quitting the buddy (tray > Quit, Ctrl+C) also stops the voice server and any sound.
 - `python3 tools/shutdown.py` stops the buddy, the voice server, any recording or playing speech, and deletes leftover audio and screenshots. Run it when you're done; it prints the GPU memory still in use.

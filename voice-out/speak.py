@@ -162,6 +162,11 @@ class Speaker(QObject):
         bus.subscribe("attention.mood", lambda m: setattr(self, "mood", float(m)))
         self.timer = QTimer(self)
         self.timer.timeout.connect(self._tick)
+        self.unload = False       # settings: stop the engine when it hasn't been used for a while
+        self.last_used = time.monotonic()
+        self.idle_timer = QTimer(self)
+        self.idle_timer.timeout.connect(self._check_idle)
+        self.idle_timer.start(15000)
 
     def _reset(self):
         self.streaming = False   # an answer is being spoken (sentences may still be arriving)
@@ -180,9 +185,10 @@ class Speaker(QObject):
     def apply(self, s):
         was = self.on
         self.on = bool(s.get("voice_out_loud", True)) and bool(s.get("claude_enabled"))
+        self.unload = bool(s.get("voice_engine_unload", False))
         if not self.on:
             self.stop_playback()
-        elif not was:
+        elif not was and not self.unload:   # in unload mode it loads on the first question instead
             self._warm_up()   # load the voice now so the first answer isn't kept waiting
 
     def shutdown(self):
@@ -200,8 +206,33 @@ class Speaker(QObject):
 
     def _warm_up(self):
         """Start loading the voice ahead of time (at start, and when you press the talk key)."""
-        if self.on and installed() and server_state() is None and not (self.server and self.server.poll() is None):
+        self.last_used = time.monotonic()
+        if self.on:
+            self.engine_start()
+
+    def engine_start(self):
+        """Start the voice engine now (also the Start button in settings). True if it was started."""
+        self.last_used = time.monotonic()
+        if installed() and server_state() is None and not (self.server and self.server.poll() is None):
             self.server = start_server()   # from the main thread, so PDEATHSIG tracks the buddy
+            return True
+        return False
+
+    def engine_stop(self):
+        """Stop the voice engine now and free the GPU (the Stop button, and the idle unload)."""
+        self.stop_playback()
+        stop_server()
+        if self.server and self.server.poll() is None:
+            try:
+                self.server.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self.server.kill()
+        self.server = None
+
+    def _check_idle(self):
+        busy = self.streaming or self.speaking or self.in_flight or self.ready
+        if self.unload and not busy and time.monotonic() - self.last_used > 120 and server_state() is not None:
+            self.engine_stop()   # not used for two minutes: free the GPU; the next question loads it again
 
     def _mood_name(self, text):
         if self.mood < -0.3:
@@ -309,6 +340,7 @@ class Speaker(QObject):
     def _play_next(self):
         if not self.ready:
             return
+        self.last_used = time.monotonic()
         path, chars = self.ready.pop(0)
         try:
             self.levels, seconds = envelope(path)

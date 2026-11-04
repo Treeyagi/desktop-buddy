@@ -173,6 +173,9 @@ class Controller(QObject):
                 self.attention.start_focus(minutes) if minutes > 0 else self.attention.stop_focus()
                 self.bus.publish("buddy.interaction", "focus")
                 continue
+            if isinstance(msg, dict) and "voice_engine" in msg:  # the settings window's start/stop buttons
+                (self.speaker.engine_start if msg["voice_engine"] == "start" else self.speaker.engine_stop)()
+                continue
             if isinstance(msg, dict) and msg.get("do"):
                 if self.overlay.paused:
                     self.settings.set(paused=False)  # asking for a move means you want to see it

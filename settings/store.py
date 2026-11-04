@@ -59,6 +59,7 @@ DEFAULTS = {
     "hum_sound": False,          # ...and as sound too (voice-out/hum.py; sounded robotic, so off)
     "dance_mode": False,         # dances nonstop, music or not
     "adhd_dance": True,          # dances when music plays from a browser or a music player
+    "voice_engine_unload": False, # stop the voice engine after 2 idle minutes (frees ~5 GB of GPU); loads again on the next question
     "voice_out_loud": True,      # voice-out/: speak answers in his cloned voice
 }
 
