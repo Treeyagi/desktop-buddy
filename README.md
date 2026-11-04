@@ -19,6 +19,8 @@ Handy for development: `python3 overlay/main.py --demo` cycles through every act
 
 Full brainstorm and idea list: [docs/NOTES.md](docs/NOTES.md)
 
+Working on it with Claude Code? Start with `CLAUDE.md` (project map, recipes, test tools) and `ROADMAP.md`.
+
 ## How the code is organized
 One folder per feature, each with its own short README (inputs and outputs). Modules talk only through events on the bus in `core/`, so you can work on one module without reading the others. This keeps Claude Code usage low: point it at a single folder.
 
@@ -32,6 +34,7 @@ One folder per feature, each with its own short README (inputs and outputs). Mod
 | `voice-out/` | Text-to-speech in my cloned voice, humming |
 | `brain/` | Claude calls, personality prompt, "who I am" file |
 | `core/` | Event bus and shared config |
+| `tools/` | Dev helpers: soak test, render a settings tab, send commands to the running buddy |
 | `settings/` | Tray icon, settings window, and the settings file the running buddy follows live |
 
 ## Decided

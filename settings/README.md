@@ -9,7 +9,8 @@ The tray icon, the settings window, and the settings file they share with the ru
 ## Files
 - `store.py`: `DEFAULTS`, `load()`, `save()`, `update(**changes)`, and `SettingsFile`, which emits `changed(dict)` when the file changes on disk. Saving swaps in a complete new file in one step, so nobody reads a half-written one. Unknown keys are kept and missing ones fall back to defaults.
 - `tray.py`: the panel icon (a little portrait of him). The menu has Pause, Quiet mode, Settings… and Quit, and clicking the icon opens settings. It lives in the overlay process; Plasma draws the menu.
-- `window.py`: the settings window. A live mini buddy at the top reacts as you move the sliders. Next to it: whether the buddy is running, with a Start/Quit button. Run it directly with `python3 settings/window.py`.
+- `window.py`: the settings window shell (preview, status, saving, sync). Each tab is a mixin in `tabs/` (`buddy`, `behavior`, `look`, `sayings`, `claude`, `my_voice`) with its own `_sync_<tab>()`; `tabs/common.py` holds shared imports and helpers.
+  A live mini buddy at the top reacts as you move the sliders. Next to it: whether the buddy is running, with a Start/Quit button. Run it directly with `python3 settings/window.py`.
 
 ## Settings (Buddy tab)
 | Key | What it does |
