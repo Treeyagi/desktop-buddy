@@ -4,6 +4,14 @@ An Ace Ventura-style cartoon version of me that lives on my CachyOS (KDE) deskto
 
 **Status:** v0.2.0. Everything in v0.1.0 (the animated character, bees, scenes, desktop awareness, tray and settings, Claude answers, push-to-talk with local Whisper) plus: the ADHD engine and focus timer; **voice out** (he answers in my cloned voice with Chatterbox, lips synced, sentence by sentence from a warm streaming Claude process, about 3 to 4 s to first sound); quiet original house-style humming on walks; reactions to what I'm doing (video, code, games, late nights); a second hotkey that shows Claude my screen for "roast my code" / "settle this argument"; and my personality and story in `brain/`. Stop everything with `python3 tools/shutdown.py`. What's next is in `ROADMAP.md`.
 
+## Install in the start menu
+```bash
+python3 tools/install.py              # adds "Desktop Buddy" (with his face as the icon) to the start menu
+python3 tools/install.py --autostart  # also starts him when you log in
+python3 tools/install.py --uninstall  # removes the menu entry, icon and autostart
+```
+The entry points at this folder (nothing is copied), and right-clicking it in the menu offers "Stop Desktop Buddy (and the voice)". Uninstalling never touches your settings, recordings or the voice environment.
+
 ## Run him
 ```bash
 python3 overlay/main.py

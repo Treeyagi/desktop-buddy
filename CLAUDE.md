@@ -38,6 +38,7 @@ other Python deps. GitHub: Treeyagi/desktop-buddy (private). Plans and ideas: `R
 - `python3 tools/soak.py [minutes]`: every move + random life, headless; must print "ok".
 - `python3 character/preview.py out.png --actions dance,jump`: contact sheet of moves.
 - `python3 tools/render_tab.py behavior out.png`: render a settings tab (throwaway settings).
+- `python3 tools/install.py` / `--uninstall`: the start menu entry. `python3 tools/shutdown.py`: stop everything.
 - `python3 tools/send.py dance` / `--focus 25`: drive a running buddy.
 - Live: `python3 overlay/main.py`, screenshot with `spectacle -b -n -f -o shot.png`.
 
