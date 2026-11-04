@@ -44,11 +44,15 @@ def main():
         b = Buddy(4000, TILE_H - 40, scale=args.scale)
         b.x = 2000
         b.force(name.split(":")[0])
-        if ":" in name:   # "dance:disco" shows just that dance move
+        if name.startswith("dance:"):   # "dance:disco" shows just that dance move
             b.data["routine"] = [name.split(":")[1]]
             b.data["seg"] = 60.0 / 126 * 4
             b.dur = b.data["seg"]
-            name = name.split(":")[0]
+            name = "dance"
+        elif name.startswith("idle:"):  # "idle:owl" shows just that idle
+            b.data["kind"] = name.split(":")[1]
+            b.dur = max(3.0, __import__("character.behavior", fromlist=["IDLE_CYCLE"]).IDLE_CYCLE.get(b.data["kind"], 3.0))
+            name = "idle"
         if name == "walk":
             b.data.update(target=99999, notice=None)
         for _ in range(60 * 60):  # scenes start by walking over; skip ahead to the scene itself

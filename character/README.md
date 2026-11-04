@@ -38,18 +38,22 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
 
 ## Actions
 - **walk:** sings or hums with notes, both arms swinging, head-bobbing to the beat. Sometimes he stops with "!", hands up, when something catches his eye.
-- **idle:** one of five, each with breathing and blinking:
+- **idle:** one of twelve, each with breathing and blinking (chill moods favor the yawn and sky-gazing, hyper ones the boxing; grumpy skips the happy ones):
   - watching the bee buzz around
   - hand on his belly
   - scratching his beard
   - humming
   - arms crossed, tapping his foot
+  - **yawn and stretch** (eyes watering), **gazing at the sky** with hands behind his back, an **owl head-swivel** with huge eyes, a **neck and shoulder roll**
+  - **shadow boxing**, **kicking a pebble** and watching it fly
+  - the **Pokemon throw**: ball up, wind up, "I choose you!", and point
+  - preview one with `python3 character/preview.py out.png --actions idle:owl`
 - **jump:** crouch, then fists up in the air, then a squash landing. Sometimes a double hop.
 - **wave:** an open-hand wave with "hey hey!".
 - **dance:** a routine of 4 to 6 moves at 126 BPM, four beats each, crossfaded so nothing snaps. It always opens with the fist pump, then picks from: disco point, sprinkler, raise the roof, robot, running man (shuffle), headbang (EDM bounce, dust on the beat), hip circles, and a twirl (he squeezes thin and turns). Hearts, notes and sparkles come with it, and the bee loops around him. The moves are `dance_*` in `moves.py` (`DANCE_MOVES`); preview one with `python3 character/preview.py out.png --actions dance:disco`.
 - **turning:** whenever he turns around he does a quick squash and bounce instead of snapping.
 - **spores:** he shimmies until the mushroom on his hat puffs glowing spores, then stomps, and toadstools and flowers pop up around him.
-- **meditate:** floats cross-legged with "ommm...".
+- **meditate:** sinks into a cross-legged sit with his hands on his knees, breathes slowly, floats a little in the middle with glowing sparkles and spores and says "ommm...", then settles back down.
 - **nap:** sits back, hand on belly, snoring z's while the bee naps on his hat mushroom. Then he wakes with "?!" and stretches.
 - **stretch:** arms out wide and a big yawn, with yawn tears.
 - **quip:** a short line with an open-hand gesture.

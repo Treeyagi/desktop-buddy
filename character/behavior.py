@@ -63,6 +63,7 @@ class Follower:
         self.y += self.vy * dt
 
 
+IDLE_CYCLE = {"yawn": 4.0, "owl": 4.4, "neck": 3.7, "pebble": 3.4, "choose": 5.0, "box": 3.2}   # seconds an idle needs
 DANCE_BPM = 126   # house tempo; the dance moves and the notes follow it
 HUM_LINES = ["mm-hm-hmmm~", "doo doo da-doo~", "mm mm mmm-mm~", "hm hm-hm hmmm~", "dun dun dun-dun~"]
 
@@ -586,8 +587,16 @@ class Buddy(SceneMixin, AdhdMixin):
 
     def _start_idle(self):
         grumpy = getattr(self, "mood", 0.2) < -0.2  # no happy humming when he's in a mood
-        self.data["kind"] = random.choices(["breathe", "belly", "scratch", "hum", "tap"],
-                                           [3, 0 if grumpy else 2, 2, 0 if grumpy else 3, 3 if grumpy else 1.5])[0]
+        hyper = getattr(self, "activity", 0.5)
+        kinds = {"breathe": 3, "belly": 0 if grumpy else 2, "scratch": 2, "hum": 0 if grumpy else 3,
+                 "tap": 3 if grumpy else 1.5,
+                 # newer ones: chill moods yawn and stare at the sky, hyper ones box and swivel
+                 "yawn": 1.5 * (1.4 - hyper), "sky": 1.5 * (1.4 - hyper), "owl": 1.2, "neck": 1.0,
+                 "box": 0 if grumpy else 1.5 * (0.4 + hyper), "pebble": 1.2,
+                 "choose": 0 if grumpy else 1.0}
+        kind = random.choices(list(kinds), list(kinds.values()))[0]
+        self.data["kind"] = kind
+        self.dur = max(self.dur, IDLE_CYCLE.get(kind, 0))   # a gesture gets to finish
 
     def _idle(self, dt):
         t = self.t
@@ -625,7 +634,113 @@ class Buddy(SceneMixin, AdhdMixin):
             pose.hand_f = pose.hand_b = "fist"
             pose.hip_f, pose.knee_f = 10 * tap, 4 + 16 * tap
             pose.look_x, pose.brow, pose.smile, pose.quirk = 1.0, 0.2, 0.3, 0.6
+        else:
+            getattr(self, "_idle_" + kind)(pose, t, br)
         return pose
+
+    # more idles: each shapes the pose it is given (t = seconds into the idle, br = breathing) ----------
+    def _idle_yawn(self, pose, t, br):
+        u = (t % 4.0) / 4.0
+        y = math.sin(min(1.0, u / 0.7) * math.pi) ** 0.8 if u < 0.7 else 0.0   # the yawn swells and fades
+        pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 15 + 135 * y, 18, 1 + 0.35 * y, "open"
+        pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -15 - 135 * y, -18, 1 + 0.35 * y, "open"
+        pose.lean, pose.sy, pose.sx = -7 * y, 1 + 0.05 * y, 1 - 0.02 * y
+        pose.head = -9 * y
+        pose.mouth, pose.mouth_open = "o", 0.95 * y
+        if y > 0.35:
+            pose.eyes, pose.tears = "closed", 0.3 * y
+        if y > 0.9 and self._once(f"yawn{int(t // 4)}"):
+            self.fx.zz(*self._head_xy(24, -30))
+
+    def _idle_sky(self, pose, t, br):
+        rock = math.sin(t * 1.1)
+        pose.sh_f, pose.el_f, pose.sh_b, pose.el_b = -32, 8, -36, 6   # hands behind his back
+        pose.lean, pose.head, pose.look_x, pose.look_y = -3 + 3 * rock, -9, 0.3, -0.95
+        pose.hip_f, pose.hip_b = 4 * rock, -4 * rock
+        pose.eyes = "open"
+        pose.smile, pose.sparkle, pose.blush = 0.7, 0.4, 0.5
+        if math.sin(t * 0.7) > 0.5:
+            pose.mouth, pose.mouth_open = "o", 0.2
+
+    def _idle_owl(self, pose, t, br):
+        """Slow, wide-eyed head swivels, like the owls he loves."""
+        target = (1.0, 0.0, -1.0, 0.0)[int(t / 1.1) % 4]
+        self.data["lx"] = self.data.get("lx", 0.0) + (target - self.data.get("lx", 0.0)) * min(1.0, self._dt * 7)
+        lx = self.data["lx"]
+        pose.look_x, pose.look_y, pose.head, pose.hat = lx, -0.1, 15 * lx, -7 * lx
+        pose.brow, pose.sparkle, pose.mouth_open, pose.smile = 1.0, 0.5, 0.0, 0.35
+        pose.lean = 2 * lx
+        pose.blink = max(pose.blink, 0.0)
+        if abs(lx) > 0.95 and int(t / 1.1) % 2 == 0:
+            pose.quirk = 0.9   # one eyebrow up: "whoo?"
+
+    def _idle_neck(self, pose, t, br):
+        roll = math.sin(t * 1.7)
+        pose.head, pose.hat, pose.lean = 20 * roll, -9 * roll, 2 * roll
+        pose.sh_f, pose.sh_b = 10 + 24 * math.sin(t * 3.4), -12 + 24 * math.sin(t * 3.4 + math.pi)   # shoulder rolls
+        pose.eyes, pose.mouth, pose.mouth_open, pose.smile = "closed", "o", 0.12, 0.4
+
+    def _idle_box(self, pose, t, br):
+        """Shadow boxing: quick alternating jabs, bouncing on his toes."""
+        jab_f, jab_b = max(0.0, math.sin(t * 6.0)), max(0.0, math.sin(t * 6.0 + math.pi))
+        pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 48 + 40 * jab_f, 115 - 110 * jab_f, 1 + 0.45 * jab_f, "fist"
+        pose.sh_b, pose.el_b, pose.reach_b, pose.hand_b = -48 - 40 * jab_b, -115 + 110 * jab_b, 1 + 0.45 * jab_b, "fist"
+        bounce = abs(math.sin(t * 3.0))
+        pose.bob, pose.knee_f, pose.knee_b = 3 * bounce, 12 + 14 * bounce, 12 + 14 * bounce
+        pose.hip_f, pose.hip_b, pose.lean = 8, -8, 5 + 4 * (jab_f - jab_b)
+        pose.brow, pose.smile, pose.mouth, pose.mouth_open = -0.3, 0.45, "o", 0.1 + 0.2 * max(jab_f, jab_b)
+        pose.look_x = 0.9
+        if max(jab_f, jab_b) > 0.97:
+            self._every("tsh", 0.35, lambda: self.fx.dust(self.x, self.floor, 2))
+
+    def _idle_pebble(self, pose, t, br):
+        """Scuffs his shoe, kicks a pebble, and watches it go."""
+        u = (t % 3.4) / 3.4
+        kick = 0.0
+        if u < 0.45:       # wind up, staring at the ground
+            wind = ease(u / 0.45)
+            pose.hip_f, pose.knee_f = -18 * wind, 4 + 40 * wind
+            pose.look_x, pose.look_y, pose.head = 0.7, 0.8, 8 * wind
+        elif u < 0.57:     # kick
+            kick = (u - 0.45) / 0.12
+            pose.hip_f, pose.knee_f = lerp(-18, 52, ease(kick)), lerp(44, 6, ease(kick))
+            pose.look_x, pose.look_y = 0.7, 0.8
+            if self._once(f"kick{int(t // 3.4)}"):
+                self.fx.dust(self.x + 38 * self.scale * self.facing, self.floor, 5)
+        else:              # follow it with his eyes
+            fly = (u - 0.57) / 0.43
+            pose.hip_f, pose.knee_f = lerp(52, 0, ease(fly * 2)), lerp(6, 4, ease(fly * 2))
+            pose.look_x, pose.look_y, pose.head = 0.4 + 0.6 * fly, 0.7 - 1.0 * fly, 3 - 6 * fly
+            pose.brow = 0.6 * (1 - fly)
+        pose.sh_f, pose.el_f, pose.sh_b, pose.el_b = 20, 25, -20, 20
+        pose.smile = 0.6
+
+    def _idle_choose(self, pose, t, br):
+        """The Pokemon throw: ball up, wind up, 'I choose you!', and point."""
+        u = (t % 5.0) / 5.0
+        cyc = int(t // 5.0)
+        pose.look_x, pose.smile, pose.sparkle, pose.blush = 0.9, 0.95, 0.5, 0.6
+        if u < 0.38:       # holding the ball up, looking at it
+            pose.sh_f, pose.el_f, pose.hand_f = 90, 95, "fist"
+            pose.look_y, pose.eyes, pose.lean = -0.2, "open", 3
+            pose.sh_b, pose.el_b = -30, 40
+            if u > 0.12:
+                self._every("glint", 0.25, lambda: self.fx.sparkle(*self._xy(self._anchor("hand_f")), speed=40))
+        elif u < 0.52:     # wind up and throw
+            k = (u - 0.38) / 0.14
+            pose.sh_f, pose.el_f = lerp(90, 175, ease(min(1, k * 1.8))) if k < 0.55 else lerp(175, 80, ease((k - 0.55) / 0.45)), \
+                lerp(95, 20, ease(min(1, k * 1.8))) if k < 0.55 else lerp(20, 4, ease((k - 0.55) / 0.45))
+            pose.hand_f, pose.lean, pose.reach_f = "fist" if k < 0.7 else "point", lerp(-8, 8, ease(k)), 1.0 + 0.5 * k
+            pose.sh_b, pose.el_b = -40, 50
+            pose.mouth, pose.mouth_open = "o", 0.6
+            if k > 0.55 and self._once(f"throw{cyc}"):
+                self.say("I choose you!", life=2.2)
+                for _ in range(8):
+                    self.fx.sparkle(*self._xy(self._anchor("hand_f")), speed=120)
+        else:              # held, pointing, proud
+            pose.sh_f, pose.el_f, pose.reach_f, pose.hand_f = 82, 4, 1.5, "point"
+            pose.lean, pose.head, pose.quirk, pose.mouth_open = 8, -3, 0.8, 0.3 if u < 0.65 else 0.0
+            pose.sh_b, pose.el_b = -30, 60
 
     def _quip(self, dt):
         t = self.t
@@ -761,17 +876,27 @@ class Buddy(SceneMixin, AdhdMixin):
                         look_y=0.8, head=8 * a, lean=4 * a, hand_f="fist", hand_b="fist"))
 
     def _meditate(self, dt):
+        """Sits cross-legged, hands on his knees, breathing slowly; floats a little in the middle."""
         t = self.t
         self.bee_mode = "orbit"
-        ramp = min(1.0, t / 1.2, max(0.0, (self.dur - t) / 1.0))
-        float_ = (18 + 6 * math.sin(t * 1.6)) * ease(ramp)
-        if t > 1.2 and self._once("om"):
-            self.say("ommm...", life=2.2)
+        settle = ease(min(1.0, t / 1.0))                       # sinks into the sit
+        rise = ease(min(1.0, max(0.0, (t - 1.8) / 1.2), max(0.0, (self.dur - 0.8 - t) / 1.0)))
+        breath = (math.sin(t * 1.5) + 1) / 2                   # in and out, about every four seconds
+        if t > 1.8 and self._once("om"):
+            self.say("ommm...", life=2.4)
         m = self._anchor("mushroom")
-        self._every("spore", 0.35, lambda: self.fx.spore(m.x(), m.y()))
-        return Pose(lift=float_, bob=24, hip_f=102, knee_f=152, hip_b=96, knee_b=146,
-                    sh_f=30, el_f=20, hand_f="open", sh_b=-20, el_b=40, hand_b="open",
-                    eyes="closed", mouth="smile", smile=0.5, blush=0.4, head=2 * math.sin(t * 0.8))
+        self._every("spore", 0.45 - 0.2 * rise, lambda: self.fx.spore(m.x(), m.y()))
+        if rise > 0.5:
+            self._every("glow", 0.7, lambda: self.fx.sparkle(*self._head_xy(random.uniform(-45, 45), -20), speed=25))
+        pose = Pose(lift=(16 + 5 * math.sin(t * 1.3)) * rise, bob=26 * settle,
+                    hip_f=lerp(0, 82, settle), knee_f=lerp(4, 172, settle),     # near shin folds flat under him
+                    hip_b=lerp(0, 95, settle), knee_b=lerp(4, 176, settle),     # far shin tucks across it
+                    lean=3 * breath, sy=1 + 0.03 * breath, sx=1 - 0.012 * breath,
+                    sh_f=lerp(10, 58, settle), el_f=lerp(16, 22, settle), hand_f="open",    # hands rest on his knees
+                    sh_b=lerp(-12, 32, settle), el_b=lerp(12, 28, settle), hand_b="open",
+                    eyes="closed", mouth="smile", smile=0.55, blush=0.45,
+                    head=2.5 * math.sin(t * 0.7) - 2, hat=2 * math.sin(t * 0.7 + 1))
+        return pose
 
     def _nap(self, dt):
         t = self.t
