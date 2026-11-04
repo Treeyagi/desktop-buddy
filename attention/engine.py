@@ -11,12 +11,14 @@ Publishes:
   attention.nudge      str: you've been on one window a long time
   attention.smug       None: you took his advice ("told ya")
   attention.sulk       None: he's been ignored a while
+  attention.react      {"kind": str, "text": str}: a comment on what you're doing (video, code, game, late night)
   attention.mood       float, -1 grumpy .. 1 delighted
   attention.focus      {"until": monotonic seconds, "minutes": n} or None when stopped
   attention.focus_done None: the focus timer ran out, break time
 """
 import json
 import random
+import re
 import subprocess
 import time
 
@@ -28,6 +30,30 @@ NUDGES = [
     "big stretch of focus. look at something far away for twenty seconds.",
     "hey. shoulders down, deep breath. then the next small step.",
 ]
+
+# What you're doing, from the focused window's app and title (nothing leaves the machine).
+# First match wins; each kind has lines he picks from.
+ACTIVITIES = [
+    ("video", r"youtube|twitch|netflix|vlc|mpv|plex|disney\+|prime video",
+     ["ooh, what are we watching?", "is this a 'one more video' situation?",
+      "I'll watch too. scoot over.", "snacks. we need snacks for this."]),
+    ("game", r"steam_app|steam$|^steam|lutris|heroic|minecraft|gamescope|wine|proton|retroarch|yuzu|dolphin-emu",
+     ["game time! go get 'em.", "is it a boss fight? it feels like a boss fight.",
+      "don't rage. rage is bad for the controller.", "I'm cheering from the sidelines."]),
+    ("code", r"code|kate|kdevelop|vim|nvim|emacs|pycharm|idea|konsole|alacritty|kitty|foot|terminal|github|stack overflow",
+     ["ooh, coding. I'll be quiet. mostly.", "if it works, don't touch it.",
+      "have you tried turning it off and on again?", "rubber duck reporting for duty."]),
+    ("chat", r"discord|telegram|signal|whatsapp|slack|element|thunderbird|gmail|mail",
+     ["messages! tell them I said hi.", "typing a big one? I'll wait.",
+      "don't forget to answer the one from yesterday."]),
+]
+LATE = [
+    "it's past midnight. sleep is a feature, not a bug.",
+    "the late hours again? water, then bed. I mean it.",
+    "even I'm sleepy. and I'm a drawing.",
+]
+REACT_COOLDOWN = 8 * 60   # seconds between comments on what you're doing
+LATE_HOURS = (0, 4)       # midnight to 4 a.m.
 
 MOOD_HOME = 0.2           # where his mood settles when things are normal
 IGNORED_AFTER = 25 * 60   # seconds without contact before he starts getting grumpy
@@ -52,6 +78,9 @@ class AttentionEngine(QObject):
         self.cool = {"squirrel": 0.0, "gaze": 0.0, "tangent": now + random.uniform(240, 600),
                      "sulk": now + 600, "sound": 0.0}
         self.streams = None
+        self.activity = None
+        self.react_at = 0.0
+        self.late_at = 0.0
         bus.subscribe("desktop.windows", self._on_windows)
         bus.subscribe("desktop.cursor", self._on_cursor)
         bus.subscribe("voice.listening", lambda down: down and self.contact())
@@ -97,6 +126,7 @@ class AttentionEngine(QObject):
     def _on_windows(self, windows):
         active = next((w for w in windows if w.active and w.showing), None)
         new_id = active.id if active else None
+        self._react(active)
         if new_id == self.active_id:
             return
         now = time.monotonic()
@@ -113,6 +143,28 @@ class AttentionEngine(QObject):
             self.cool["gaze"] = now + 60
             r = active.rect
             self.bus.publish("attention.gaze", {"at": r.center(), "why": "window"})
+
+    def _react(self, active):
+        """Comment when you start something new (a video, code, a game), or when you're up past midnight."""
+        kind, lines = None, None
+        if active:
+            hay = f"{active.app} {active.title}".lower()
+            for k, pattern, texts in ACTIVITIES:
+                if re.search(pattern, hay):
+                    kind, lines = k, texts
+                    break
+        changed = kind != self.activity
+        self.activity = kind
+        now = time.monotonic()
+        if not self.on("adhd_react") or self.calm():
+            return
+        hour = time.localtime().tm_hour
+        if (active and LATE_HOURS[0] <= hour < LATE_HOURS[1] and now > self.late_at and kind in ("game", "video", "code")):
+            self.late_at = self.react_at = now + 45 * 60
+            self.bus.publish("attention.react", {"kind": "late", "text": random.choice(LATE)})
+        elif changed and kind and now > self.react_at and random.random() < 0.5:
+            self.react_at = now + REACT_COOLDOWN
+            self.bus.publish("attention.react", {"kind": kind, "text": random.choice(lines)})
 
     def _on_cursor(self, pt):
         now = time.monotonic()

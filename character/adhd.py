@@ -43,6 +43,7 @@ class AdhdMixin:
         bus.subscribe("attention.gaze", self._on_gaze)
         bus.subscribe("attention.tangent", lambda _: self._free() and self.enter("tangent"))
         bus.subscribe("attention.nudge", self._on_nudge)
+        bus.subscribe("attention.react", lambda r: self._free() and self.enter("quip", text=r["text"]))
         bus.subscribe("attention.smug", lambda _: self._free() and self.enter("smug"))
         bus.subscribe("attention.sulk", lambda _: self._free() and self.enter("sulk"))
         bus.subscribe("attention.mood", lambda m: setattr(self, "mood", float(m)))

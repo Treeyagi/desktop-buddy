@@ -34,6 +34,7 @@ DEFAULTS = {
     "adhd_distract": True,    # windows you switch to and new sounds catch his eye
     "adhd_tangents": True,    # "wait, unrelated, but..."
     "adhd_mood": True,        # grumpy when ignored, smug when right
+    "adhd_react": True,       # comments on what you're doing (video, code, game, up late)
     "nudge_minutes": 60,      # nudge after this long on one window; 0 = never
     "tangents": None,         # his tangent lines; None = the built-in ones
     "fullscreen_hide": True,  # hide while a fullscreen app (game, video) is on his monitor

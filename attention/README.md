@@ -12,6 +12,7 @@ The ADHD engine. Pure local logic, no Claude usage. It watches the desktop and t
 | `attention.tangent` | every 6 to 15 minutes | "okay, the plan for today is—" then "wait, unrelated, but..." then a random thought, then "anyway." |
 | `attention.nudge` | you've been on the same window longer than the nudge setting (default 60 min) | points and suggests a break (said later, if he's busy) |
 | `attention.smug` | you switch windows within 3 minutes of a nudge | "told ya." |
+| `attention.react` | you switch to a video, code, game or chat window (50%, at most every 8 min), or use video/code/games between midnight and 4 a.m. (every 45 min) | a quip about it, picked from the lines in `ACTIVITIES` / `LATE` in `engine.py`; matched on app and window title, all local |
 | `attention.mood` | always: settles toward cheerful; sinks when ignored over 25 min; rises when you interact | frowns when grumpy, extra cheery when happy; mood shifts which moves he picks |
 | `attention.sulk` | he's grumpy (mood below -0.4), at most every 10 to 20 min | sits with arms crossed: "nobody talks to me anymore..." |
 | `attention.focus` / `attention.focus_done` | you start a focus timer (tray menu or the Behavior tab: 25 or 50 min) | walks to the side of the screen and sits quietly with a countdown over his head; at the end, a dance and "break time! nice work." |
@@ -28,3 +29,4 @@ The ADHD engine. Pure local logic, no Claude usage. It watches the desktop and t
 ## Still planned
 - the hyperfocus thinking loop for Claude answers (try, check, search, deliver)
 - walk-out moments from `brain/who-i-am.md`
+- react lines from Claude, and from the page title (what the video is) instead of fixed lines

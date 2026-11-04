@@ -78,6 +78,7 @@ class BehaviorTab:
         for key, label in (("adhd_squirrel", "Squirrel moments: now and then he chases your mouse cursor"),
                            ("adhd_distract", "Gets distracted by windows you switch to and sounds that start"),
                            ("adhd_tangents", "Tangents: \"wait, unrelated, but...\""),
+                           ("adhd_react", "Reacts to what you're doing: videos, coding, games, being up past midnight"),
                            ("adhd_mood", "Moods: grumpy when ignored for a while, smug when you take his advice")):
             cb = QCheckBox(label)
             cb.toggled.connect(lambda on, k=key: self._queue(**{k: on}))

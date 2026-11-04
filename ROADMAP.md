@@ -10,9 +10,8 @@ What's done is described in each folder's README. This is what's next; the full 
    Ask before the multi-GB install.
 2. **Walk-out moments:** short gratitude / family / "what I'm geeking out about" moments from
    `brain/who-i-am.md` (the user fills that in first).
-3. **Reacting to what you're doing:** YouTube, coding, 2 a.m. gaming, using window titles from KWin.
-4. **Hotkey modes:** "roast my code", "settle this argument", with a screenshot sent only on the hotkey.
-5. **Study-quiz mode** for the user's son, in character.
+3. **Hotkey modes:** "roast my code", "settle this argument", with a screenshot sent only on the hotkey.
+4. **Study-quiz mode** for the user's son, in character.
 
 ## Polish
 - Roam across both monitors (walk from one to the other).
