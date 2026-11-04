@@ -60,6 +60,7 @@ class Preview(QWidget):
         self.buddy.quips = list(s.get("quips") or QUIPS)
         self.buddy.greetings = list(s.get("greetings") or GREETINGS)
         self.buddy.tangents = list(s.get("tangents") or TANGENTS)
+        self.buddy.moments = list(s.get("moments") or []) or None
         self.buddy.set_companion(bool(s.get("companion_bee", True)))
         self.paused = bool(s["paused"])
 

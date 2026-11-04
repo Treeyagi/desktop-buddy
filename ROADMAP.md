@@ -3,9 +3,7 @@
 What's done is described in each folder's README. This is what's next; the full brainstorm is in `docs/NOTES.md`.
 
 ## Next up
-1. **Walk-out moments:** short gratitude / family / "what I'm geeking out about" moments from
-   `brain/who-i-am.md` (the user fills that in first).
-2. **Study-quiz mode** for the user's son, in character.
+1. **Study-quiz mode** for the user's son, in character.
 
 ## Polish
 - Roam across both monitors (walk from one to the other).

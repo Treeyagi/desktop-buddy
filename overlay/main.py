@@ -219,6 +219,7 @@ class Controller(QObject):
         b.quips = [q for q in (s.get("quips") or QUIPS) if str(q).strip()] or list(QUIPS)
         b.greetings = [q for q in (s.get("greetings") or GREETINGS) if str(q).strip()] or list(GREETINGS)
         b.tangents = [q for q in (s.get("tangents") or TANGENTS) if str(q).strip()] or list(TANGENTS)
+        b.moments = [q for q in (s.get("moments") or []) if str(q).strip()] or None
         if hasattr(self, "attention"):
             if self.settings_seen is not None and s != self.settings_seen:
                 self.bus.publish("buddy.interaction", "settings")  # fiddling with his settings counts

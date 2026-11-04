@@ -16,7 +16,7 @@ from character.moves import gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, ease
 from character.props import font
 
-ADHD_ACTIONS = {"chase", "pounce", "gaze", "tangent", "nudge", "smug", "sulk", "focus_sit"}
+ADHD_ACTIONS = {"chase", "pounce", "gaze", "tangent", "nudge", "smug", "sulk", "focus_sit", "moment"}
 INTERRUPTIBLE = {"idle", "walk", "quip", "wave", "stretch", "notice"}
 
 OPENERS = ["so I was thinking we should—", "okay, the plan for today is—", "you know what we need?",
@@ -36,6 +36,7 @@ class AdhdMixin:
         self.cursor_seen = 0.0
         self.pending_nudge = None
         self.tangents = list(TANGENTS)
+        self.moments = None   # walk-out moment lines; None = the built-in ones (character/moments.py)
         if not bus:
             return
         bus.subscribe("desktop.cursor", self._on_cursor)
@@ -43,6 +44,7 @@ class AdhdMixin:
         bus.subscribe("attention.gaze", self._on_gaze)
         bus.subscribe("attention.tangent", lambda _: self._free() and self.enter("tangent"))
         bus.subscribe("attention.nudge", self._on_nudge)
+        bus.subscribe("attention.moment", lambda _: self._free() and self.enter("moment"))
         bus.subscribe("attention.music", self._on_music)
         bus.subscribe("attention.react", lambda r: self._free() and self.enter("quip", text=r["text"]))
         bus.subscribe("attention.smug", lambda _: self._free() and self.enter("smug"))

@@ -11,6 +11,7 @@ Publishes:
   attention.nudge      str: you've been on one window a long time
   attention.smug       None: you took his advice ("told ya")
   attention.sulk       None: he's been ignored a while
+  attention.moment     None: a walk-out moment (gratitude, family, geeking out, dreams, vibes, a calm breath)
   attention.music      bool: music is playing from a browser or a music player (True/False on change)
   attention.react      {"kind": str, "text": str}: a comment on what you're doing (video, code, game, late night)
   attention.mood       float, -1 grumpy .. 1 delighted
@@ -81,7 +82,8 @@ class AttentionEngine(QObject):
         self.cursor = None
         self.cursor_at = 0.0
         self.cool = {"squirrel": 0.0, "gaze": 0.0, "tangent": now + random.uniform(240, 600),
-                     "sulk": now + 600, "sound": 0.0}
+                     "sulk": now + 600, "sound": 0.0,
+                     "moment": now + random.uniform(300, 600)}
         self.streams = None
         self.music = False
         self.music_votes = 0
@@ -229,6 +231,10 @@ class AttentionEngine(QObject):
         if (self.on("adhd_mood") and self.mood < -0.4 and not self.calm() and now > self.cool["sulk"]):
             self.cool["sulk"] = now + random.uniform(600, 1200)
             self.bus.publish("attention.sulk", None)
+
+        if self.on("adhd_moments") and not self.calm() and now > self.cool["moment"]:
+            self.cool["moment"] = now + random.uniform(720, 1800)   # one every 12 to 30 minutes
+            self.bus.publish("attention.moment", None)
 
         if self.on("adhd_tangents") and not self.calm() and now > self.cool["tangent"]:
             self.cool["tangent"] = now + random.uniform(360, 900)

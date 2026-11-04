@@ -36,6 +36,8 @@ DEFAULTS = {
     "adhd_mood": True,        # grumpy when ignored, smug when right
     "adhd_react": True,       # comments on what you're doing (video, code, game, up late)
     "nudge_minutes": 60,      # nudge after this long on one window; 0 = never
+    "moments": None,          # his walk-out moment lines ("kind: text"); None = the built-in ones
+    "adhd_moments": True,     # walk-out moments: gratitude, family, geeking out, dreams, vibes
     "tangents": None,         # his tangent lines; None = the built-in ones
     "fullscreen_hide": True,  # hide while a fullscreen app (game, video) is on his monitor
     # look and sayings

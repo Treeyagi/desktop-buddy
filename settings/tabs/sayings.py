@@ -12,7 +12,9 @@ class SayingsTab:
         for key, title, defaults, action in (("quips", "Random sayings", QUIPS, "quip"),
                                              ("greetings", "When he waves", GREETINGS, "wave"),
                                              ("tangents", "Tangents (\"wait, unrelated, but...\")",
-                                              TANGENTS, "tangent")):
+                                              TANGENTS, "tangent"),
+                                             ("moments", "Walk-out moments (kind: line. Kinds: gratitude, "
+                                              "family, geek, dream, vibes, calm)", MOMENTS, "moment")):
             group = QGroupBox(title)
             box = QVBoxLayout(group)
             lst = QListWidget()

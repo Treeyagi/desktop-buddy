@@ -12,6 +12,7 @@ The ADHD engine. Pure local logic, no Claude usage. It watches the desktop and t
 | `attention.tangent` | every 6 to 15 minutes | "okay, the plan for today is—" then "wait, unrelated, but..." then a random thought, then "anyway." |
 | `attention.nudge` | you've been on the same window longer than the nudge setting (default 60 min) | points and suggests a break (said later, if he's busy) |
 | `attention.smug` | you switch windows within 3 minutes of a nudge | "told ya." |
+| `attention.moment` | every 12 to 30 minutes (the first after 5 to 10) | stops and says something real from your story with a matching gesture; see `character/moments.py` |
 | `attention.music` | audio is playing from a browser or a music player (`MUSIC_APPS` in `engine.py`) for two polls in a row (8 s); `False` when it stops | he says "ooh, a bop!" and dances, then dances again every 35 to 60 s while it plays (not in quiet mode) |
 | `attention.react` | you switch to a video, code, game or chat window (50%, at most every 8 min), or use video/code/games between midnight and 4 a.m. (every 45 min) | a quip about it, picked from the lines in `ACTIVITIES` / `LATE` in `engine.py`; matched on app and window title, all local |
 | `attention.mood` | always: settles toward cheerful; sinks when ignored over 25 min; rises when you interact | frowns when grumpy, extra cheery when happy; mood shifts which moves he picks |
@@ -23,11 +24,11 @@ The ADHD engine. Pure local logic, no Claude usage. It watches the desktop and t
 **No distractions while:** a focus timer is running, or quiet mode is on.
 
 ## Settings (Behavior tab, "ADHD brain")
-- `adhd_squirrel`, `adhd_distract`, `adhd_tangents`, `adhd_react`, `adhd_dance`, `adhd_mood`: on/off switches, all on by default
+- `adhd_squirrel`, `adhd_distract`, `adhd_tangents`, `adhd_react`, `adhd_dance`, `adhd_moments`, `adhd_mood`: on/off switches, all on by default
 - `nudge_minutes`: 0 means never, default 60
 - `tangents`: his tangent lines, editable in the Sayings tab
+- `moments`: his walk-out moment lines (`kind: text`), editable in the Sayings tab
 
 ## Still planned
 - the hyperfocus thinking loop for Claude answers (try, check, search, deliver)
-- walk-out moments from `brain/who-i-am.md`
 - react lines from Claude, and from the page title (what the video is) instead of fixed lines

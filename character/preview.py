@@ -49,6 +49,12 @@ def main():
             b.data["seg"] = 60.0 / 126 * 4
             b.dur = b.data["seg"]
             name = "dance"
+        elif name.startswith("moment:"):   # "moment:family" shows one kind of walk-out moment
+            from character.moments import MOMENTS
+            kind = name.split(":")[1]
+            b.enter("moment", text=next(m for m in MOMENTS if m.startswith(kind + ":")))
+            b.locked = "moment"
+            name = "moment"
         elif name.startswith("idle:"):  # "idle:owl" shows just that idle
             b.data["kind"] = name.split(":")[1]
             b.dur = max(3.0, __import__("character.behavior", fromlist=["IDLE_CYCLE"]).IDLE_CYCLE.get(b.data["kind"], 3.0))

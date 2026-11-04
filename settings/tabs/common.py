@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QChe
 from brain import client, keychain
 import character.rig as rig
 from character.adhd import TANGENTS
+from character.moments import MOMENTS
 from character.behavior import GREETINGS, QUIPS, Buddy
 from core.load import load
 from settings import autostart

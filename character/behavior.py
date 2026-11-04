@@ -18,6 +18,7 @@ from character.props import Machine
 from character.moves import DANCE_MOVES, dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, skeleton, to_world
 from character.adhd import ADHD_ACTIONS, AdhdMixin
+from character.moments import MomentsMixin
 from character.scenes import SCENES, SceneMixin
 
 # name: (weight when picked at random, duration range in seconds)
@@ -68,7 +69,7 @@ DANCE_BPM = 126   # house tempo; the dance moves and the notes follow it
 HUM_LINES = ["mm-hm-hmmm~", "doo doo da-doo~", "mm mm mmm-mm~", "hm hm-hm hmmm~", "dun dun dun-dun~"]
 
 
-class Buddy(SceneMixin, AdhdMixin):
+class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
     def __init__(self, width, floor, scale=1.0, demo=False, bus=None, screen_id=0):
         self.width, self.floor, self.scale = width, floor, scale
         self.x = width * 0.3
