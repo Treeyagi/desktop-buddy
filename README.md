@@ -2,7 +2,7 @@
 
 An Ace Ventura-style cartoon version of me that lives on my CachyOS (KDE) desktop as a transparent overlay. He walks around, jumps, hums to himself, reacts to icons and windows, and answers voice questions on a hotkey, with a snarky raw-philosopher personality that always ends with a solution.
 
-**Status:** v0.1.0. He lives on the desktop: a full animated character with bee buddies, scenes (clearance aisle, card vending machine, sitting on windows), awareness of your real desktop icons and windows, a tray icon and settings window, Claude answers in his personality, and push-to-talk with local Whisper. Since v0.1.0: the ADHD engine (squirrel moments, distractions, tangents, nudges, moods, a focus timer) and the My voice recording tab. Not built yet: voice out (his cloned voice).
+**Status:** v0.2.0. Everything in v0.1.0 (the animated character, bees, scenes, desktop awareness, tray and settings, Claude answers, push-to-talk with local Whisper) plus: the ADHD engine and focus timer; **voice out** (he answers in my cloned voice with Chatterbox, lips synced, sentence by sentence from a warm streaming Claude process, about 3 to 4 s to first sound); quiet original house-style humming on walks; reactions to what I'm doing (video, code, games, late nights); a second hotkey that shows Claude my screen for "roast my code" / "settle this argument"; and my personality and story in `brain/`. Stop everything with `python3 tools/shutdown.py`. What's next is in `ROADMAP.md`.
 
 ## Run him
 ```bash
