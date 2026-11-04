@@ -1,4 +1,4 @@
-"""Push-to-talk as a real KDE global shortcut.
+"""Push-to-talk (and its "look at my screen" twin) as real KDE global shortcuts.
 
 Registers "Desktop Buddy / Push to talk (hold)" with KGlobalAccel over D-Bus,
 so it works in any app and also shows up in System Settings > Shortcuts. KDE
@@ -10,13 +10,14 @@ from PyQt6.QtGui import QKeySequence
 
 COMPONENT = "desktop-buddy"
 ACTION = "push-to-talk"
-ACTION_ID = [COMPONENT, ACTION, "Desktop Buddy", "Push to talk (hold)"]
+LABEL = "Push to talk (hold)"
+SCREEN_ACTION, SCREEN_LABEL = "look-at-screen", "Look at my screen (hold)"
 PATH = "/component/desktop_buddy"
 SET_PRESENT, NO_AUTOLOADING = 2, 4
 
 
-def _action_id():
-    return QDBusArgument(ACTION_ID, QMetaType.Type.QStringList.value)
+def _action_id(action=ACTION, label=LABEL):
+    return QDBusArgument([COMPONENT, action, "Desktop Buddy", label], QMetaType.Type.QStringList.value)
 
 
 def _check(reply, what):
@@ -38,19 +39,23 @@ class PushToTalk(QObject):
     pressed = pyqtSignal()
     released = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, action=ACTION, label=LABEL):
         super().__init__(parent)
+        self.action, self.label = action, label
         self.session = QDBusConnection.sessionBus()
         self.kga = QDBusInterface("org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel", self.session)
         self.key = None
         self.down = False
         if not self.kga.isValid():
             return
-        _check(self.kga.call("doRegister", _action_id()), "registering")
+        _check(self.kga.call("doRegister", self._id()), "registering")
         for signal, slot in (("globalShortcutPressed", self._pressed),
                              ("globalShortcutReleased", self._released)):
             self.session.connect("org.kde.kglobalaccel", PATH, "org.kde.kglobalaccel.Component",
                                  signal, slot)
+
+    def _id(self):
+        return _action_id(self.action, self.label)
 
     @property
     def available(self):
@@ -73,7 +78,7 @@ class PushToTalk(QObject):
         ok = self.kga.call("isGlobalShortcutAvailable", key, COMPONENT).arguments()
         if ok and not ok[0]:
             return f"{text} is already used by another shortcut. Pick a different key."
-        _check(self.kga.call("setShortcut", _action_id(), _keys(key),
+        _check(self.kga.call("setShortcut", self._id(), _keys(key),
                              QDBusArgument(SET_PRESENT | NO_AUTOLOADING, QMetaType.Type.UInt.value)),
                "setting the key")
         self.key = key
@@ -81,24 +86,24 @@ class PushToTalk(QObject):
 
     def current_keys(self):
         """The keys KDE has bound to push-to-talk right now."""
-        args = self.kga.call("shortcut", _action_id()).arguments()
+        args = self.kga.call("shortcut", self._id()).arguments()
         return list(args[0]) if args and isinstance(args[0], list) else []
 
     def clear(self):
         if self.available:
-            _check(self.kga.call("setShortcut", _action_id(), _keys(),
+            _check(self.kga.call("setShortcut", self._id(), _keys(),
                                  QDBusArgument(SET_PRESENT | NO_AUTOLOADING, QMetaType.Type.UInt.value)),
                    "clearing the key")
         self.key = None
 
     @pyqtSlot(str, str, "qlonglong")
     def _pressed(self, component, action, _ts):
-        if action == ACTION and not self.down:  # held keys repeat; one press is enough
+        if action == self.action and not self.down:  # held keys repeat; one press is enough
             self.down = True
             self.pressed.emit()
 
     @pyqtSlot(str, str, "qlonglong")
     def _released(self, component, action, _ts):
-        if action == ACTION and self.down:
+        if action == self.action and self.down:
             self.down = False
             self.released.emit()

@@ -55,6 +55,7 @@ The Sayings tab edits both lists. Double-click a line to edit it; there are Add,
 | `claude_backend` | `claude-code` (your Claude plan) or `api` (API key in KWallet). See `brain/README.md` |
 | `claude_model` | `claude-opus-5-5` (default), `claude-sonnet-5-5` or `claude-haiku-5-5` |
 | `voice_enabled` | Push to talk on or off (default on) |
+| `screen_hotkey` | The look-at-my-screen key (default Meta+Shift+Space); empty turns it off |
 | `voice_hotkey` | The push-to-talk key (default Meta+Space). The window checks it against your other KDE shortcuts |
 | `voice_mic` | A PipeWire source name, or `null` for the system default mic |
 | `whisper_model` | `tiny.en`, `base.en` (default) or `small.en`; the Voice section downloads them, with a progress bar |

@@ -2,9 +2,9 @@
 
 Where Claude gets called, and where the personality lives.
 
-- **Inputs:** transcripts from `voice-in/` (push-to-talk), optional screenshot on hotkey (later)
+- **Inputs:** transcripts from `voice-in/` (push-to-talk), a screenshot, only when the "Look at my screen" hotkey is used
 - **Outputs:** reply text for `voice-out/` and `character/`. For now it's shown in the settings window's "Try him" box.
-- **Still planned:** a mood tag on replies, the screenshot-on-hotkey question, and the multi-pass hyperfocus loop (try, check, search, deliver).
+- **Still planned:** a mood tag on replies, the multi-pass hyperfocus loop (try, check, search, deliver).
 
 ## Files
 - `personality.md`: the system prompt. Snarky raw philosopher, always lands on a solution, never cruel to the helpless, no cop-outs, sincere about faith and family without preaching, and short spoken answers. Edit it freely.

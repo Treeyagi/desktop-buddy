@@ -14,6 +14,11 @@ Push-to-talk: hold a key, talk, let go. He listens, Whisper turns it into text o
 - `stt.py`: speech to text with whisper.cpp's `whisper-cli` (`sudo pacman -S whisper-cpp`). The models are whisper.cpp's ggml files in `~/.local/share/desktop-buddy/whisper/`: tiny.en 75 MB, base.en 142 MB (the default), small.en 466 MB. Download them from Settings > Claude > Voice.
 - `listen.py`: `VoiceIn` ties it together. Press starts recording. Release transcribes off the UI thread, deletes the recording, and asks Claude (if "Let him answer with Claude" is on), then publishes the reply. A tap under 0.4 s is ignored.
 
+## Look at my screen (hotkey modes)
+A second shortcut, "Look at my screen (hold)" (default Meta+Shift+Space), works like push-to-talk but also grabs one screenshot (`spectacle`) at the moment you press. This is the only time a screenshot exists or goes to Claude.
+- The words you say pick the mode (`MODES` in `brain/client.py`): "roast my code" (snarky code review ending in the one fix that matters), "settle this argument" (who has the stronger point, how to end it), anything else is a plain question about what's on screen.
+- The shot is shrunk to a 1568 px JPEG, sent, and deleted right after (also on a too-short tap or quit). With Claude Code he can read only that file's folder; with the API it goes as an image block.
+
 ## What he does
 - **listen:** leans in with a hand cupped by his face, "I'm listening…".
 - **think:** hyperfocus. He squints, paces a little and scratches his beard, with a thought cloud showing what he heard.

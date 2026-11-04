@@ -11,7 +11,9 @@ The system prompt is personality.md plus the filled-in parts of who-i-am.md.
 ask() blocks, so call it off the UI thread.
 """
 import json
+import base64
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -71,6 +73,25 @@ def system_prompt():
     return prompt
 
 
+# What he's asked to do with the screenshot, picked from the words you said while holding the screen key.
+MODES = [
+    ("roast", r"roast|tear (it )?apart|rip (it )?apart|what.?s wrong with",
+     "Roast mode: the screenshot shows the user's code or work. Roast it: name the real problems with "
+     "snark aimed at the code, never at the person, then land on the one fix that matters most."),
+    ("settle", r"settle|argument|arguing|who.?s right|who is right|referee|judge|debate",
+     "Settle-the-argument mode: the screenshot shows a disagreement (a chat, a thread, a comment fight). "
+     "Say who has the stronger point and why, fairly, in a few sentences, then how to end it gracefully."),
+]
+LOOK = ("The user is showing you their screen. Answer what they asked about it, using what you can see.")
+
+
+def pick_mode(question):
+    for name, pattern, prompt in MODES:
+        if re.search(pattern, question.lower()):
+            return name, prompt
+    return "look", LOOK
+
+
 def claude_cli():
     return shutil.which("claude")
 
@@ -83,22 +104,29 @@ def sdk_installed():
         return False
 
 
-def ask(question, backend="claude-code", model=DEFAULT_MODEL, timeout=120):
+def ask(question, backend="claude-code", model=DEFAULT_MODEL, timeout=120, image=None):
+    """`image` is a path to a screenshot, sent only when the screen hotkey was used."""
     start = time.monotonic()
     fn = _ask_api if backend == "api" else _ask_cli
-    reply = fn(question.strip(), model, timeout)
+    question = question.strip()
+    if image:
+        question = f"{pick_mode(question)[1]}\n\nThe user said: {question}"
+    reply = fn(question, model, timeout, image)
     reply.seconds = time.monotonic() - start
     reply.backend, reply.model = backend, model
     return reply
 
 
-def _ask_cli(question, model, timeout):
+def _ask_cli(question, model, timeout, image=None):
     exe = claude_cli()
     if not exe:
         return Reply(error="Claude Code isn't installed (no `claude` command found).")
     os.makedirs(WORKDIR, exist_ok=True)
-    cmd = [exe, "-p", "--system-prompt", system_prompt(), "--model", model, "--tools", "",
+    cmd = [exe, "-p", "--system-prompt", system_prompt(), "--model", model, "--tools", "Read" if image else "",
            "--safe-mode", "--no-session-persistence", "--strict-mcp-config", "--output-format", "json"]
+    if image:  # the only thing he may read is the screenshot's folder
+        cmd += ["--allowedTools", "Read", "--add-dir", os.path.dirname(image)]
+        question += f"\n\nThe screenshot is the image file {image} (read it)."
     try:
         out = subprocess.run(cmd, cwd=WORKDIR, input=question, capture_output=True, text=True,
                              timeout=timeout)
@@ -114,7 +142,7 @@ def _ask_cli(question, model, timeout):
     return Reply(text=str(data.get("result", "")).strip())
 
 
-def _ask_api(question, model, timeout):
+def _ask_api(question, model, timeout, image=None):
     try:
         import anthropic
     except ImportError:
@@ -124,11 +152,17 @@ def _ask_api(question, model, timeout):
         client = anthropic.Anthropic(api_key=key, timeout=timeout) if key else anthropic.Anthropic(timeout=timeout)
     except anthropic.AnthropicError:
         return Reply(error="No API key: save one in the Claude tab, or set ANTHROPIC_API_KEY.")
+    content = question
+    if image:
+        with open(image, "rb") as f:
+            data = base64.standard_b64encode(f.read()).decode()
+        content = [{"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": data}},
+                   {"type": "text", "text": question}]
     params = dict(
         model=model,
         max_tokens=16000,
         system=system_prompt(),
-        messages=[{"role": "user", "content": question}],
+        messages=[{"role": "user", "content": content}],
         output_config={"effort": "low"},  # short spoken chat replies
     )
     try:

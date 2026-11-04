@@ -49,6 +49,7 @@ DEFAULTS = {
     # voice
     "voice_enabled": True,       # push-to-talk (voice-in/)
     "voice_hotkey": "Meta+Space",
+    "screen_hotkey": "Meta+Shift+Space",  # hold, say "roast my code" / "settle this"; sends one screenshot
     "voice_mic": None,           # a PipeWire source name; None = the system default mic
     "whisper_model": "base.en",  # tiny.en | base.en | small.en
     "voice_out_loud": True,      # voice-out (not built yet)

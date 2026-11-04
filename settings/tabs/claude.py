@@ -97,6 +97,20 @@ class ClaudeTab:
         box.addWidget(self.hotkey_status)
         form.addRow("Key", box)
 
+        self.screen_key = QKeySequenceEdit()
+        self.screen_key.setMaximumSequenceLength(1)
+        use = QPushButton("Use this key")
+        use.clicked.connect(lambda: self._set_hotkey(screen=True))
+        row = QHBoxLayout()
+        row.addWidget(self.screen_key, 1)
+        row.addWidget(use)
+        self.screen_status = self._hint("Hold it and say \"roast my code\" or \"settle this argument\" (or anything "
+                                        "about your screen). One screenshot goes to Claude, only then, and is deleted.")
+        box = QVBoxLayout()
+        box.addLayout(row)
+        box.addWidget(self.screen_status)
+        form.addRow("Look at my screen", box)
+
         self.mic = QComboBox()
         self.mic.currentIndexChanged.connect(lambda _: not self._syncing and self._queue(voice_mic=self.mic.currentData()))
         refresh = QPushButton("Refresh")
@@ -163,22 +177,24 @@ class ClaudeTab:
         self.mic.setCurrentIndex(max(0, i))
         self._syncing = was
 
-    def _set_hotkey(self):
-        seq = self.hotkey.keySequence()
+    def _set_hotkey(self, screen=False):
+        edit, status = (self.screen_key, self.screen_status) if screen else (self.hotkey, self.hotkey_status)
+        seq = edit.keySequence()
         if seq.isEmpty():
-            self.hotkey_status.setText("Click the box, then press the key you want.")
+            status.setText("Click the box, then press the key you want.")
             return
         kga = QDBusInterface("org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel",
                              QDBusConnection.sessionBus())
         key = seq[0].toCombined()
         hotkey = load("voice-in", "hotkey")
-        ours = kga.call("shortcut", hotkey._action_id()).arguments()
+        mine = (hotkey.SCREEN_ACTION, hotkey.SCREEN_LABEL) if screen else (hotkey.ACTION, hotkey.LABEL)
+        ours = kga.call("shortcut", hotkey._action_id(*mine)).arguments()
         free = kga.call("isGlobalShortcutAvailable", key, "desktop-buddy").arguments()
         if free and not free[0] and not (ours and isinstance(ours[0], list) and key in ours[0]):
-            self.hotkey_status.setText(f"{seq.toString()} is already used by another shortcut. Pick another.")
+            status.setText(f"{seq.toString()} is already used by another shortcut. Pick another.")
             return
-        self._queue(voice_hotkey=seq.toString())
-        self.hotkey_status.setText(f"Push to talk is now {seq.toString()}.")
+        self._queue(**{"screen_hotkey" if screen else "voice_hotkey": seq.toString()})
+        status.setText(f"{'Look at my screen' if screen else 'Push to talk'} is now {seq.toString()}.")
 
     def _model_changed(self, _=None):
         if not self._syncing:
@@ -313,6 +329,7 @@ class ClaudeTab:
         self.model_box.setCurrentIndex(max(0, self.model_box.findData(s.get("claude_model"))))
         self.voice_on.setChecked(bool(s.get("voice_enabled", True)))
         self.hotkey.setKeySequence(QKeySequence(str(s.get("voice_hotkey") or "")))
+        self.screen_key.setKeySequence(QKeySequence(str(s.get("screen_hotkey") or "")))
         if self.mic.currentData() != s.get("voice_mic"):
             self._fill_mics(s.get("voice_mic"))
         self.stt_model.setCurrentIndex(max(0, self.stt_model.findData(s.get("whisper_model", stt.DEFAULT_MODEL))))
