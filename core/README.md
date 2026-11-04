@@ -19,6 +19,7 @@ Event bus and shared config. Every other module talks only through this, so none
 | `voice.thinking` | the transcript, while Claude works | voice-in | character (thought cloud) |
 | `voice.reply` | `{"text", "error", "heard"}` | voice-in | voice-out (speaks it, then re-publishes as `voice.say`) |
 | `voice.say` | the reply plus `"seconds"` (audio length, 0 if silent) | voice-out | character (answer: bubble and lips) |
+| `buddy.hum` | `True` when a happy walk starts with a hum, `False` when it ends | character | voice-out (plays the hum) |
 | `voice.mouth` | `float` 0..1 while audio plays, then `None` | voice-out | character (lip sync) |
 | `voice.cancel` | `None`, for a tap too short to be speech | voice-in | character |
 | `desktop.cursor` | `QPointF`, the mouse pointer in global coordinates | desktop-awareness | attention, character (chasing) |

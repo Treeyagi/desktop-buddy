@@ -131,6 +131,9 @@ class Controller(QObject):
         self.speaker = load("voice-out", "speak").Speaker(self.bus, parent=self)
         app.aboutToQuit.connect(self.speaker.shutdown)  # stops the sound and the voice server
         self.speaker.apply(self.settings.data)
+        self.hummer = load("voice-out", "hum").Hummer(self.bus, parent=self)
+        app.aboutToQuit.connect(self.hummer.stop)
+        self.hummer.apply(self.settings.data)
         self.bus.subscribe("voice.listening", self._on_listening)
         self.attention = load("attention", "engine").AttentionEngine(self.bus, parent=self)
         self.attention.apply(self.settings.data)
@@ -233,6 +236,8 @@ class Controller(QObject):
             self.voice.apply(s)
         if hasattr(self, "speaker"):
             self.speaker.apply(s)
+        if hasattr(self, "hummer"):
+            self.hummer.apply(s)
         hide_for_fullscreen = self.fullscreen_here and bool(s.get("fullscreen_hide", True))
         self.overlay.set_paused(bool(s.get("paused", False)) or hide_for_fullscreen)
 

@@ -123,6 +123,8 @@ class Buddy(SceneMixin, AdhdMixin):
             bus.subscribe("desktop.windows", self._on_windows)
             bus.subscribe("desktop.icons", self._on_icons)
             bus.subscribe("desktop.icon_added", self._on_icon_added)
+        self.bus = bus
+        self.humming = False      # a happy walk with a quiet hum playing (voice-out/hum.py)
         self.mouth_level = None   # from the audio while he speaks out loud
         self.speech_seconds = 0.0
         self._adhd_init(bus)
@@ -264,6 +266,8 @@ class Buddy(SceneMixin, AdhdMixin):
         self.dur = random.uniform(lo, hi)
         if name == "idle":  # chill means longer pauses, hyper means fidgety
             self.dur *= 1.5 - self.activity
+        if name != "walk":
+            self._hum(False)
         if name not in ("nap", "meditate"):
             self.bee_mode = "orbit"
             if self.companion:
@@ -509,9 +513,16 @@ class Buddy(SceneMixin, AdhdMixin):
         d.setdefault("speed", random.uniform(75, 120) * s * (0.8 + 0.4 * self.activity))
         d.setdefault("mood", random.choice(["content", "cheery", "strut"]))
         d.setdefault("notice", None)
+        self._hum(d["mood"] in ("content", "cheery") and not self.quiet and random.random() < 0.5)
         d.setdefault("start", self.x)
         d.setdefault("phase", 0.0)
         self.facing = 1 if d["target"] >= self.x else -1
+
+    def _hum(self, on):
+        if on != self.humming:
+            self.humming = on
+            if self.bus:
+                self.bus.publish("buddy.hum", on)
 
     def _walk(self, dt):
         d = self.data
@@ -525,6 +536,8 @@ class Buddy(SceneMixin, AdhdMixin):
         stride = 28 * self.scale
         d["phase"] += dt * d["speed"] / stride * math.pi / 2
         pose = gait_pose(d["phase"], d["mood"])
+        if self.humming:
+            pose.mouth_open = 0.1 + 0.08 * abs(math.sin(self.t * 7))   # a closed-ish "mm"
         if d["mood"] in ("content", "cheery"):
             self._every("note", random.uniform(0.45, 0.85),
                         lambda: self.fx.note(*self._head_xy(26, -40)))
