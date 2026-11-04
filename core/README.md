@@ -17,7 +17,9 @@ Event bus and shared config. Every other module talks only through this, so none
 | `desktop.icon_added` | `DesktopIcon` for a file that just appeared | desktop-awareness | character (goes to check it out) |
 | `voice.listening` | `True` on push-to-talk press, `False` on release | voice-in | character (listen / think), overlay (un-pause) |
 | `voice.thinking` | the transcript, while Claude works | voice-in | character (thought cloud) |
-| `voice.reply` | `{"text", "error", "heard"}` | voice-in | character (answer) |
+| `voice.reply` | `{"text", "error", "heard"}` | voice-in | voice-out (speaks it, then re-publishes as `voice.say`) |
+| `voice.say` | the reply plus `"seconds"` (audio length, 0 if silent) | voice-out | character (answer: bubble and lips) |
+| `voice.mouth` | `float` 0..1 while audio plays, then `None` | voice-out | character (lip sync) |
 | `voice.cancel` | `None`, for a tap too short to be speech | voice-in | character |
 | `desktop.cursor` | `QPointF`, the mouse pointer in global coordinates | desktop-awareness | attention, character (chasing) |
 | `buddy.interaction` | a short reason string, when you interact with him | overlay | attention (mood) |

@@ -147,8 +147,8 @@ class ClaudeTab:
         row.addWidget(self.test_result, 1)
         form.addRow("Test", row)
 
-        self.out_loud = QCheckBox("Answer out loud in my voice (comes with voice out)")
-        self.out_loud.setEnabled(False)
+        self.out_loud = QCheckBox("Answer out loud in my voice (needs the voice server: see voice-out/README.md)")
+        self.out_loud.toggled.connect(lambda on: not self._syncing and self._queue(voice_out_loud=on))
         form.addRow("", self.out_loud)
         form.addRow("", self._hint("Your voice is turned into text on this computer by Whisper; only the "
                                    "text goes on to Claude. Recordings are deleted right after."))

@@ -59,7 +59,7 @@ The Sayings tab edits both lists. Double-click a line to edit it; there are Add,
 | `voice_hotkey` | The push-to-talk key (default Meta+Space). The window checks it against your other KDE shortcuts |
 | `voice_mic` | A PipeWire source name, or `null` for the system default mic |
 | `whisper_model` | `tiny.en`, `base.en` (default) or `small.en`; the Voice section downloads them, with a progress bar |
-| `voice_out_loud` | Greyed out until voice out exists |
+| `voice_out_loud` | He speaks his answers in your cloned voice (voice-out/README.md); default on |
 
 The Voice section also has "Hold to test": it records and transcribes right in the window.
 

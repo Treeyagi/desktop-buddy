@@ -117,11 +117,14 @@ class Buddy(SceneMixin, AdhdMixin):
         if bus:
             bus.subscribe("voice.listening", self._on_listening)
             bus.subscribe("voice.thinking", self._on_heard)
-            bus.subscribe("voice.reply", self._on_reply)
+            bus.subscribe("voice.say", self._on_reply)  # voice-out/speak.py passes voice.reply on, with audio ready
+            bus.subscribe("voice.mouth", lambda level: setattr(self, "mouth_level", level))
             bus.subscribe("voice.cancel", lambda _: self.state in VOICE_ACTIONS and self.do_now("idle"))
             bus.subscribe("desktop.windows", self._on_windows)
             bus.subscribe("desktop.icons", self._on_icons)
             bus.subscribe("desktop.icon_added", self._on_icon_added)
+        self.mouth_level = None   # from the audio while he speaks out loud
+        self.speech_seconds = 0.0
         self._adhd_init(bus)
         self.enter("walk" if demo else "idle")
 
@@ -155,6 +158,7 @@ class Buddy(SceneMixin, AdhdMixin):
     def _on_reply(self, reply):
         self.thought = None
         text = (reply or {}).get("text") or (reply or {}).get("error") or "..."
+        self.speech_seconds = float((reply or {}).get("seconds") or 0)  # > 0: audio is playing
         self.do_now("answer", text)
 
     def set_screen(self, name, origin):
@@ -756,15 +760,21 @@ class Buddy(SceneMixin, AdhdMixin):
     def _start_answer(self):
         text = self.data.get("text") or "..."
         self.dur = min(24.0, 2.5 + len(text) / 14)
+        if self.speech_seconds:
+            self.dur = min(60.0, self.speech_seconds + 0.8)
         self.say(text, life=self.dur - 0.2, force=True)
 
     def _answer(self, dt):
         t = self.t
         talking = t < self.dur - 1.0
+        if self.mouth_level is not None:  # lips follow the audio
+            talking = False
         gesture = math.sin(t * 2.1)
         pose = Pose(smile=0.8, quirk=0.6 + 0.3 * math.sin(t * 0.9), brow=0.3, look_x=0.5,
                     mouth_open=(0.2 + 0.35 * abs(math.sin(t * 11))) if talking else 0.0,
                     head=4 * math.sin(t * 1.7), bob=1.2 * abs(math.sin(t * 2.2)))
+        if self.mouth_level is not None:
+            pose.mouth_open = 0.08 + 0.8 * self.mouth_level
         pose.sh_f, pose.el_f, pose.hand_f = 55 + 15 * gesture, 50 + 15 * gesture, "open"
         pose.sh_b, pose.el_b, pose.hand_b = -40 - 12 * gesture, -45, "open"
         return pose
