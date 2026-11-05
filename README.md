@@ -16,6 +16,7 @@ The entry points at this folder (nothing is copied), and right-clicking it in th
 ```bash
 tools/make-executable.sh        # builds dist/desktop-buddy and dist/desktop-buddy.tar.gz
 ./desktop-buddy                 # start him (the first run unpacks to ~/.cache/desktop-buddy-app)
+./desktop-buddy --doctor        # checks python, PyQt6 and layer-shell on this PC (and --log shows the last run)
 ./desktop-buddy --install       # start menu entry that runs this file (--autostart, --uninstall, --stop too)
 ```
 It is a shell stub with the app packed after it, and needs the same packages as below. Releases attach
