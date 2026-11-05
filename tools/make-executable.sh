@@ -53,7 +53,7 @@ hint() {
   else echo "install python3 and PyQt6 with your package manager"; fi
 }
 case "\${1:-}" in
-  --help|-h) echo "desktop-buddy [--stop | --install [--autostart] | --uninstall | --version | --doctor | --log | --deps]"; exit 0;;
+  --help|-h) echo "desktop-buddy [--stop | --install [--autostart] | --uninstall | --version | --doctor | --log | --deps [--yes]]"; exit 0;;
   --version) cat "\$CACHE/VERSION"; exit 0;;
   --log) cat "\$LOG" 2>/dev/null || echo "No log yet."; exit 0;;
   --doctor)
