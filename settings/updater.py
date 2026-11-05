@@ -66,14 +66,18 @@ def check():
 
 def _update_exe(tag):
     """The one-file build: download the release's desktop-buddy.tar.gz and swap the file for the new one."""
-    if not shutil.which("gh"):
-        raise RuntimeError("Updating the one-file build needs the GitHub CLI (gh), signed in: gh auth login.")
     tmp = tempfile.mkdtemp(prefix="buddy-update-")
     try:
-        r = subprocess.run(["gh", "release", "download", tag, "--repo", "Treeyagi/desktop-buddy",
-                            "--pattern", "desktop-buddy.tar.gz", "--dir", tmp, "--clobber"],
-                           capture_output=True, text=True, timeout=120)
         archive = os.path.join(tmp, "desktop-buddy.tar.gz")
+        url = f"https://github.com/Treeyagi/desktop-buddy/releases/download/{tag}/desktop-buddy.tar.gz"
+        if shutil.which("curl"):   # the repo is public: no login needed
+            argv = ["curl", "-fsSL", "-o", archive, url]
+        elif shutil.which("gh"):
+            argv = ["gh", "release", "download", tag, "--repo", "Treeyagi/desktop-buddy",
+                    "--pattern", "desktop-buddy.tar.gz", "--dir", tmp, "--clobber"]
+        else:
+            raise RuntimeError("Updating needs curl (or the GitHub CLI). Run: sh tools/install-deps.sh")
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=120)
         if r.returncode or not os.path.exists(archive):
             raise RuntimeError("That release has no one-file download: " + (r.stderr.strip()[-150:] or tag))
         with tarfile.open(archive) as t:

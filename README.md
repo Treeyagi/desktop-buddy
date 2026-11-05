@@ -21,7 +21,7 @@ tools/make-executable.sh        # builds dist/desktop-buddy and dist/desktop-bud
 ```
 It is a shell stub with the app packed after it, and needs the same packages as below. Releases attach
 `desktop-buddy.tar.gz` (a tar.gz keeps the executable flag that a browser download loses). The Version row in
-Settings updates this build by downloading the newest release (needs `gh` signed in, as the repo is private).
+Settings updates this build by downloading the newest release (only needs `curl`; the repo is public).
 
 ## Run him
 ```bash
