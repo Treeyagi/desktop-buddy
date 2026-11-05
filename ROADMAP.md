@@ -1,6 +1,6 @@
 # Roadmap
 
-What's done is described in each folder's README (current release: v0.5.3). This is what's next; the full
+What's done is described in each folder's README (current release: v0.5.4). This is what's next; the full
 brainstorm is in `docs/NOTES.md`.
 
 ## Next up
