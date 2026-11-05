@@ -188,7 +188,8 @@ class SettingsWindow(BuddyTab, BehaviorTab, LookTab, SayingsTab, ClaudeTab, MyVo
         if pid:
             os.kill(pid, signal.SIGTERM)
         else:
-            subprocess.Popen([sys.executable, os.path.join(ROOT, "overlay", "main.py")],
+            exe = os.environ.get("DESKTOP_BUDDY_EXE")   # from the one-file build: start that file (it may be newer)
+            subprocess.Popen([exe] if exe else [sys.executable, os.path.join(ROOT, "overlay", "main.py")],
                              start_new_session=True)
         QTimer.singleShot(1200, self._update_status)
 

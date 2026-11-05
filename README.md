@@ -12,6 +12,16 @@ python3 tools/install.py --uninstall  # removes the menu entry, icon and autosta
 ```
 The entry points at this folder (nothing is copied), and right-clicking it in the menu offers "Stop Desktop Buddy (and the voice)". Uninstalling never touches your settings, recordings or the voice environment.
 
+## One-file build
+```bash
+tools/make-executable.sh        # builds dist/desktop-buddy and dist/desktop-buddy.tar.gz
+./desktop-buddy                 # start him (the first run unpacks to ~/.cache/desktop-buddy-app)
+./desktop-buddy --install       # start menu entry that runs this file (--autostart, --uninstall, --stop too)
+```
+It is a shell stub with the app packed after it, and needs the same packages as below. Releases attach
+`desktop-buddy.tar.gz` (a tar.gz keeps the executable flag that a browser download loses). The Version row in
+Settings updates this build by downloading the newest release (needs `gh` signed in, as the repo is private).
+
 ## Run him
 ```bash
 python3 overlay/main.py

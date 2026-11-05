@@ -5,7 +5,8 @@
   python3 tools/install.py --autostart  also start him when you log in
   python3 tools/install.py --uninstall  take the menu entry, icon and autostart back out
 
-Nothing is copied: the menu entry points at this folder, so updating the repo updates him. Your
+Nothing is copied: the menu entry points at this folder, so updating the repo updates him. (Run from the
+one-file build, `desktop-buddy --install`, it points at that file instead.) Your
 settings, recordings and the voice environment (~/.config and ~/.local/share/desktop-buddy) are never
 touched, not even by --uninstall.
 """
@@ -25,16 +26,19 @@ AUTO = os.path.join(AUTOSTART, f"{NAME}.desktop")
 SIZES = (48, 64, 128, 256)
 
 
+EXE = os.environ.get("DESKTOP_BUDDY_EXE")   # set by the one-file build: the menu entry runs that file
+
+
 def desktop_entry(autostart=False):
     py = shutil.which("python3") or "/usr/bin/python3"
+    start, stop = (EXE, f"{EXE} --stop") if EXE else (f"{py} {ROOT}/overlay/main.py", f"{py} {ROOT}/tools/shutdown.py")
     lines = [
         "[Desktop Entry]",
         "Type=Application",
         "Name=Desktop Buddy",
         "GenericName=Desktop companion",
         "Comment=A cartoon of me that lives on the desktop",
-        f"Exec={py} {ROOT}/overlay/main.py",
-        f"Path={ROOT}",
+        f"Exec={start}",
         f"Icon={NAME}",
         "Terminal=false",
         "Categories=Utility;Amusement;",
@@ -46,7 +50,7 @@ def desktop_entry(autostart=False):
         lines.append("X-KDE-autostart-after=panel")
     else:
         lines += ["Actions=stop;", "", "[Desktop Action stop]", "Name=Stop Desktop Buddy (and the voice)",
-                  f"Exec={py} {ROOT}/tools/shutdown.py"]
+                  f"Exec={stop}"]
     return "\n".join(lines) + "\n"
 
 
