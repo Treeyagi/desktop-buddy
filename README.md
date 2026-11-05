@@ -29,6 +29,8 @@ python3 overlay/main.py
 ```
 Then use the tray icon (his face with the mushroom hat) for Pause, Quiet mode, Settings and Quit. Settings can also be opened directly with `python3 settings/window.py`, and `--tab claude` (or `behavior`, `look`, `sayings`) opens a specific tab.
 
+Everything below in one go: `sh tools/install-deps.sh` (or `./desktop-buddy --deps` from the one-file build; add `--voice`, `--screen` or `--all`, `--dry-run` to preview).
+
 Requirements (CachyOS / Arch, KDE Plasma 6 on Wayland):
 - `python-pyqt6` and `layer-shell-qt` (already on a Plasma install)
 - for Claude: Claude Code (`claude` command) signed in, or an Anthropic API key plus `pip install --user --break-system-packages anthropic`

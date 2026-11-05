@@ -9,6 +9,7 @@
 # It still needs python3, PyQt6 and layer-shell-qt on the PC (see the README).
 #
 #   ./desktop-buddy              start him             ./desktop-buddy --stop     stop him and the voice
+#   ./desktop-buddy --deps       installs what he needs (Python, PyQt6, layer-shell; --voice, --screen, --all)
 #   ./desktop-buddy --doctor     checks this PC (python, PyQt6, layer-shell)    --log   shows the last run's output
 #   ./desktop-buddy --install    start menu entry      ./desktop-buddy --uninstall   take it back out
 # Ship the .tar.gz: a plain download loses the executable flag, a tar.gz keeps it.
@@ -52,7 +53,7 @@ hint() {
   else echo "install python3 and PyQt6 with your package manager"; fi
 }
 case "\${1:-}" in
-  --help|-h) echo "desktop-buddy [--stop | --install [--autostart] | --uninstall | --version | --doctor | --log]"; exit 0;;
+  --help|-h) echo "desktop-buddy [--stop | --install [--autostart] | --uninstall | --version | --doctor | --log | --deps]"; exit 0;;
   --version) cat "\$CACHE/VERSION"; exit 0;;
   --log) cat "\$LOG" 2>/dev/null || echo "No log yet."; exit 0;;
   --doctor)
@@ -62,6 +63,7 @@ case "\${1:-}" in
     echo "session:  \${XDG_SESSION_TYPE:-unknown}, display \${WAYLAND_DISPLAY:-\${DISPLAY:-none}}"
     [ -e /usr/lib/qt6/plugins/wayland-shell-integration/liblayer-shell.so ] && echo "layer-shell: ok (pinned to the desktop)" || echo "layer-shell: missing (he works as a normal window; optional)"
     echo "unpacked: \$CACHE"; echo "log:      \$LOG"; exit 0;;
+  --deps) shift; exec sh "\$CACHE/tools/install-deps.sh" "\$@";;
   --stop) exec python3 "\$CACHE/tools/shutdown.py";;
   --install) shift; exec python3 "\$CACHE/tools/install.py" "\$@";;
   --uninstall) exec python3 "\$CACHE/tools/install.py" --uninstall;;
