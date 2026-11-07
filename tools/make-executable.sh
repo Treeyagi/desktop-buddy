@@ -19,7 +19,7 @@ mkdir -p dist
 VERSION="$(git describe --tags --always 2>/dev/null || echo dev)"
 printf '%s\n' "$VERSION" > dist/VERSION
 # everything the app runs, without the dev pictures and notes
-git ls-files -z | grep -zvE '^(docs/|character/(reference-|.*\.(png|jpg))|dist/)' > dist/files.lst
+git ls-files -z | grep -zvE '^(docs/|character/(reference-|[^/]*\.(png|jpg))|dist/)' > dist/files.lst
 tar -czf dist/payload.tgz --null -T dist/files.lst -C dist VERSION
 ID="$(sha256sum dist/payload.tgz | cut -c1-12)"
 {
