@@ -24,12 +24,13 @@ from PyQt6.QtCore import QPointF, QRectF
 from PyQt6.QtGui import QColor, QPainter, QPainterPath
 
 from character.moves import dance_pose, fists_up, gait_pose, hold, hug, palms_up, scratch_beard, shrug
+from character.gamestop import GsProp
 from character.props import ITEMS, Item, Machine, draw_item, ease_back, font
 from character.rig import GOLD, INK, Pose, _pen, draw_front_hand, ease, lerp, star_polygon
 
 RUMMAGE = 3.4   # seconds flipping through the pack before the last card turns over
 
-SCENES = {"kroger": 1.2, "vending": 0.6, "perch": 1.0}  # random-pick weights
+SCENES = {"kroger": 1.2, "vending": 0.6, "perch": 1.0, "gamestop": 0.4}  # random-pick weights
 PERCH_LINES = ["nice view.", "best seat in the house.", "comfy.", "don't mind me."]
 
 MATH_LINES = ["{price}", "+ tax...", "need it?", "where'd it go?", "hmm..."]
@@ -199,6 +200,7 @@ class SceneMixin:
     # props ------------------------------------------------------------------
     def update_props(self, dt):
         s = self.scale
+        self.gs_update(dt)
         for q in self.props:
             q.update(dt)
             if not isinstance(q, Item):
@@ -265,13 +267,18 @@ class SceneMixin:
 
     def draw_props_behind(self, p):
         for q in self.props:
-            if isinstance(q, Machine) or (q.carrier is None and q.fly is None and not self._in_hand(q)):
+            if isinstance(q, GsProp):
+                if not q.front:
+                    q.draw(p)
+            elif isinstance(q, Machine) or (q.carrier is None and q.fly is None and not self._in_hand(q)):
                 q.draw(p)
 
     def draw_props_front(self, p):
         held = False
         for q in self.props:
-            if isinstance(q, Item) and not q.behind and (self._in_hand(q) or q.carrier or q.fly is not None):
+            if isinstance(q, GsProp) and q.front:
+                q.draw(p)
+            elif isinstance(q, Item) and not q.behind and (self._in_hand(q) or q.carrier or q.fly is not None):
                 q.draw(p)
                 held = held or (self._in_hand(q) and q.grab >= 0.9)
         if held:  # fingers wrap around whatever he's holding

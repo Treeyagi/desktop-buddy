@@ -14,6 +14,7 @@ from PyQt6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath
 
 from character.bees import Hive
 from character.effects import Effects
+from character.gamestop import GameStopMixin, GsProp
 from character.props import Machine
 from character.moves import DANCE_MOVES, dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, skeleton, to_world
@@ -40,7 +41,7 @@ VOICE_ACTIONS = {"listen", "think", "answer"}  # push-to-talk conversation (voic
 
 # how the activity setting (0 chill .. 1 hyper) and quiet mode shape his day
 CALM = {"idle", "meditate", "nap", "stretch"}
-LIVELY = {"jump", "dance", "spores", "wave", "quip", "kroger", "vending"}
+LIVELY = {"jump", "dance", "spores", "wave", "quip", "kroger", "vending", "gamestop"}
 
 GREETINGS = ["hey hey!", "howdy!", "yo!"]
 QUIPS = ["ahh... life is good.", "alrighty then!", "hmm hmm hmm ♪", "deep breaths. good vibes.",
@@ -69,7 +70,7 @@ DANCE_BPM = 126   # house tempo; the dance moves and the notes follow it
 HUM_LINES = ["mm-hm-hmmm~", "doo doo da-doo~", "mm mm mmm-mm~", "hm hm-hm hmmm~", "dun dun dun-dun~"]
 
 
-class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
+class Buddy(SceneMixin, GameStopMixin, AdhdMixin, MomentsMixin):
     def __init__(self, width, floor, scale=1.0, demo=False, bus=None, screen_id=0):
         self.width, self.floor, self.scale = width, floor, scale
         self.x = width * 0.3
@@ -212,7 +213,7 @@ class Buddy(SceneMixin, AdhdMixin, MomentsMixin):
         self.thought = None
         self.pending_icon = None
         for q in self.props:
-            if isinstance(q, Machine):
+            if isinstance(q, (Machine, GsProp)):
                 q.leave(0.3)
             elif q.grab > 0 or q.carrier is not None or q.fly is not None or q.alpha < 1:
                 q.gone = True

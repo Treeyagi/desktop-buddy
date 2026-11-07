@@ -49,6 +49,7 @@ BEHAVIORS = [
     ("kroger", "Clearance aisle", "Finds something (often a real desktop icon), daydreams, does the math."),
     ("perch", "Sitting on windows", "Bees lift him onto a window's title bar; he rides along if you move it."),
     ("vending", "Card vending machine", "Rare. Sold out, or The Ultimate Pull."),
+    ("gamestop", "GameStop run", "Rolls a console to sell, a scalper makes an offer, then madness."),
 ]
 
 

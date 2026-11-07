@@ -60,6 +60,8 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
 - **quip:** a short line with an open-hand gesture.
 
 ## Scenes
+**gamestop** (`gamestop.py`): mom says one console has to go. A CONSOLE ROLL slot machine rises and he pulls the lever; the console it lands on (NES, SNES, N64, GameCube, PS2, Dreamcast, Game Boy, Wii) is what he carries to the GAME STOP store on the far side of the screen. Halfway, a scalper pulls him aside and offers cash. He says no, the scalper whistles for goons, and the madness starts: goons chase him (he hops them), a midnight-release stampede and a racing rival kid overtake him, and rain may pour. At the door a manager offers a pittance and a coupon (most often), a surprise mint payday, or he keeps the console. Try it with `python3 tools/send.py gamestop`.
+
 **kroger, using your real desktop icons** (about 3 in 4 times, when icons are known):
 1. He spots an icon with "!", points, and walks under it.
 2. Three bees dive in from the top of the screen, grab his hat brim and crown, and carry him up, legs kicking.
