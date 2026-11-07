@@ -42,6 +42,7 @@ DEFAULTS = {
     "tangents": None,         # his tangent lines; None = the built-in ones
     "fullscreen_hide": True,  # hide while a fullscreen app (game, video) is on his monitor
     # look and sayings
+    "character": "cartoon",  # cartoon (the vector rig) | sprite (character/sprite.py)
     "shoes": "hot pink",  # a style from character/rig.py SHOE_STYLES
     "quips": None,        # his random sayings; None = the built-in ones
     "greetings": None,    # what he says when he waves; None = the built-in ones

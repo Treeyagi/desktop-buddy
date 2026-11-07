@@ -224,6 +224,7 @@ class Controller(QObject):
         b.new_file_reaction = bool(s.get("new_file_reaction", True))
         b.set_companion(bool(s.get("companion_bee", True)))
         rig.set_shoes(str(s.get("shoes", "hot pink")))
+        b.sprite_mode = s.get("character") == "sprite"
         b.quips = [q for q in (s.get("quips") or QUIPS) if str(q).strip()] or list(QUIPS)
         b.greetings = [q for q in (s.get("greetings") or GREETINGS) if str(q).strip()] or list(GREETINGS)
         b.tangents = [q for q in (s.get("tangents") or TANGENTS) if str(q).strip()] or list(TANGENTS)

@@ -281,7 +281,7 @@ class SceneMixin:
             elif isinstance(q, Item) and not q.behind and (self._in_hand(q) or q.carrier or q.fly is not None):
                 q.draw(p)
                 held = held or (self._in_hand(q) and q.grab >= 0.9)
-        if held:  # fingers wrap around whatever he's holding
+        if held and not self.sprite_mode:  # fingers wrap around whatever he's holding
             draw_front_hand(p, self.x, self.floor, self.facing, self.scale, self.pose)
 
     def think(self, kind, life, item=None, lines=None, side=1, force=False):

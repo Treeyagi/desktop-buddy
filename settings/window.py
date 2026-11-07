@@ -57,6 +57,7 @@ class Preview(QWidget):
         self.buddy.quiet = bool(s["quiet"])
         self.buddy.behaviors = s.get("behaviors") or {}
         rig.set_shoes(str(s.get("shoes", "hot pink")))
+        self.buddy.sprite_mode = s.get("character") == "sprite"
         self.buddy.quips = list(s.get("quips") or QUIPS)
         self.buddy.greetings = list(s.get("greetings") or GREETINGS)
         self.buddy.tangents = list(s.get("tangents") or TANGENTS)

@@ -21,6 +21,7 @@ from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, sk
 from character.adhd import ADHD_ACTIONS, AdhdMixin
 from character.moments import MomentsMixin
 from character.scenes import SCENES, SceneMixin
+from character.sprite import draw_sprite
 
 # name: (weight when picked at random, duration range in seconds)
 ACTIONS = {
@@ -89,6 +90,7 @@ class Buddy(SceneMixin, GameStopMixin, AdhdMixin, MomentsMixin):
         self.bubble = None
         self.thought = None
         self.props = []
+        self.sprite_mode = False     # settings: draw the hand-drawn sprite instead of the vector rig
         self.pity = 0  # vending letdowns in a row
         self.screen_id = screen_id
         self.icons = []              # desktop icons on this screen, from desktop-awareness/
@@ -427,8 +429,13 @@ class Buddy(SceneMixin, GameStopMixin, AdhdMixin, MomentsMixin):
     # drawing --------------------------------------------------------------
     def draw(self, p):
         self.draw_props_behind(p)
-        draw_buddy(p, self.x, self.floor, self.facing, self.scale, self.pose,
-                   self.hat_bend, self.hat_squash, self.clock)
+        if self.sprite_mode:
+            walking = self.state in ("walk", "gs_madness")
+            draw_sprite(p, self.x, self.floor, self.facing, self.scale, self.pose,
+                        self.data.get("phase", 0.0) if walking else None, self.clock)
+        else:
+            draw_buddy(p, self.x, self.floor, self.facing, self.scale, self.pose,
+                       self.hat_bend, self.hat_squash, self.clock)
         self.draw_props_front(p)
         self.hive.draw(p)
         self.fx.draw(p)

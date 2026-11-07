@@ -42,6 +42,7 @@ The tray icon, the settings window, and the settings file they share with the ru
 ## Settings (Look and Sayings tabs)
 | Key | What it does |
 |---|---|
+| `character` | `cartoon` (default, the vector rig) or `sprite` (Inzo, the hand-drawn walk sheet in `character/sprites/inzo/`); applied live |
 | `shoes` | `hot pink` (default), `dusty pink` or `sky blue`; picked from rendered swatches and applied live |
 | `quips` | His random sayings, as a list. `null` uses the built-in ones in `character/behavior.py` |
 | `greetings` | What he says when he waves. `null` uses the built-ins |
