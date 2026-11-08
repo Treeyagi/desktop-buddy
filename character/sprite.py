@@ -1,11 +1,13 @@
-"""The sprite character: Treeyagi, from his character pack (character/sprites/treeyagi/).
+"""The sprite character: Treeyagi, from his character pack v2.9 (character/sprites/treeyagi/).
 
-An alternative to the vector rig (settings: "character"). The pack has seven actions in eight directions
-(idle, walk, skip, charge, attack, hurt, faint; frames and timings in anims.json). Walk, idle, skip, charge,
-hurt and faint are cut from the pack's high-resolution source sheets (about 216 px tall); attack only exists
-in the pack at 128 px, so it is drawn bigger and softer. Each action has its own anchor (ax, ay) and size. The Buddy's states map onto them in `anim_for`; the pose's lift, bob,
-squash and lean still move the whole picture, so jumps and squashes work. Walking is driven by the walk
-phase so his feet plant; the rest play on their own clocks.
+An alternative to the vector rig (settings: "character"). 29 animations in eight directions (frames and
+timings in anims.json): empty-handed everyday ones plus the wand ones (draw, holster, charge, attack). Most
+are cut from the pack's high-resolution source sheets; charge and attack only exist at 128 px in the pack, so
+they are drawn bigger and a little softer. Each action has its own anchor (ax, ay), feet line and draw size.
+
+`anim_for()` maps every Buddy state onto an animation and a view. The wand only ever appears around the
+wand states: when a state wants it and he doesn't have it out, he plays draw_wand first, and when he is
+done with it, holster_wand. The pose's lift, squash, lean and head tilt still move the whole picture.
 """
 import json
 import math
@@ -14,11 +16,17 @@ import os
 from PyQt6.QtCore import QPointF
 from PyQt6.QtGui import QPainter, QPixmap
 
+from character.gamestop import CONSOLES
+
 DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sprites", "treeyagi")
 with open(os.path.join(DIR, "anims.json")) as _f:
-    _meta = json.load(_f)
-ANIMS = _meta["anims"]
+    ANIMS = json.load(_f)["anims"]
 _frames = {}
+
+VIEWS = {"side": ("E", "W"), "three": ("SE", "SW"), "front": ("S", "S"), "back": ("N", "N")}
+DANCES = ["dance_groove", "dance_shuffle", "dance_disco"]   # one move cycle per beat, a new style every four beats
+BEAT = 60.0 / 126.0
+ARMED = {"charge", "attack"}
 
 
 def frame(action, direction, n):
@@ -29,71 +37,115 @@ def frame(action, direction, n):
 
 
 class Anim:
-    """What to draw this frame: an action, a view (side | three | front | back), a time or walk phase or a
-    fixed frame, and extra wobble (degrees of tilt, pixels up) for things the pack has no art for."""
-    def __init__(self, action, view="three", t=0.0, phase=None, frame=None, speed=1.0, tilt=0.0, up=0.0):
-        self.action, self.view, self.t, self.phase, self.frame = action, view, t, phase, frame
+    """What to draw: an action, a view, and how to pick the frame: a walk phase, a fixed frame, a progress
+    (0..1 through the state, mapped over the frames) or plain time. Plus a little extra tilt/lift."""
+    def __init__(self, action, view="three", t=0.0, phase=None, frame=None, prog=None, speed=1.0, tilt=0.0, up=0.0):
+        self.action, self.view, self.t, self.phase, self.frame, self.prog = action, view, t, phase, frame, prog
         self.speed, self.tilt, self.up = speed, tilt, up
+
+
+def _prog(t, dur):
+    return max(0.0, min(0.999, t / dur)) if dur else 0.0
 
 
 def anim_for(b):
     """Maps the Buddy's current state onto the pack's animations (b is the Buddy)."""
     st, t, d = b.state, b.t, b.data
     sin = math.sin
+    dur = getattr(b, "dur", 0) or 0
     if st == "walk":
-        sad = d.get("mood") == "sad"
-        return Anim("walk", "side", phase=d.get("phase", 0.0), tilt=5 if sad else 0, up=-2 if sad else 0)
-    if st in ("chase", "pounce"):
-        return Anim("skip" if st == "pounce" else "walk", "side", t=t, phase=d.get("phase") if st == "chase" else None)
+        if d.get("mood") == "sad":
+            return Anim("sad_walk", "side", phase=d.get("phase", 0.0))
+        return Anim("walk", "side", phase=d.get("phase", 0.0))
+    if st == "chase":
+        return Anim("sprint", "side", t=t)
+    if st == "pounce":
+        return Anim("dodge", "side", prog=_prog(t, dur))
     if st == "gs_madness":
-        if d.get("hop", 1.0) < 1.0:   # dodging: a hop
-            return Anim("skip", "side", frame=1)
-        return Anim("walk", "side", phase=d.get("phase", 0.0), tilt=8)
+        if d.get("hop", 1.0) < 1.0:   # dodging whatever closes in
+            return Anim("dodge", "side", prog=d["hop"])
+        return Anim("sprint", "side", t=t)
     if st == "dance":
-        return Anim("skip", "three", t=t, speed=0.4 * 126 / 60,   # one skip cycle (0.4 s) per beat (60/126 s)
-                     tilt=4 * sin(t * math.tau * 126 / 120))
+        clip = DANCES[int(t / (4 * BEAT)) % 3]
+        return Anim(clip, "front", t=t, speed=sum(ANIMS[clip]["ms"]) / 1000.0 / BEAT)
     if st == "jump":
-        return Anim("skip", "side", frame=0 if t < 0.25 else 1 if t < 0.9 else 2)
-    if st == "wave":   # the wand raised above his hat, wiggling
-        return Anim("attack", "side", frame=2, tilt=7 * sin(t * 14))
-    if st in ("listen", "think", "spores", "focus_sit"):
-        return Anim("charge", "front" if st != "spores" else "three", t=t)
-    if st in ("answer", "quip", "moment", "nudge"):   # talking to you: front on, bobbing along
-        return Anim("idle", "front", t=t, up=2 * abs(sin(t * 7)))
+        return Anim("dodge", "three", prog=_prog(t, 1.25))
+    if st == "wave":
+        return Anim("wave", "three", t=t)
+    if st in ("quip", "answer", "moment", "nudge"):
+        return Anim("talk", "front", t=t)
+    if st in ("listen", "think", "focus_sit"):
+        return Anim("think", "front", t=t)
+    if st == "spores":
+        return Anim("charge", "three", t=t)
+    if st == "stretch":
+        return Anim("stretch", "front", prog=_prog(t, dur))
+    if st == "meditate":
+        return Anim("meditate", "front", t=t)
     if st == "nap":
-        return Anim("faint", "side", t=t)
+        return Anim("nap", "front", t=t)
     if st == "sulk":
-        return Anim("idle", "three", t=t, tilt=7, up=-4)   # slumped; he only has grins to work with
-    if st in ("notice", "spot_icon", "spot_machine", "tangent"):   # caught his eye: a little start
-        return Anim("skip", "three", frame=1 if t < 0.4 else None, t=t)
+        return Anim("sulk", "front", t=t)
+    if st in ("notice", "tangent"):    # something caught his eye
+        return Anim("hurt", "three", frame=0) if t < 0.7 else Anim("shrug", "three", prog=_prog(t - 0.7, max(1.0, dur - 0.7)))
+    if st == "spot_icon":
+        return Anim("hurt", "three", frame=0)
+    if st == "spot_machine":
+        return Anim("victory", "front", prog=_prog(t, dur or 1.5))
     if st == "perch":   # sitting on a window with his back to you, watching the desktop
-        return Anim("idle", "back", t=t)
-    if st == "fly":     # dangling from the bees
-        return Anim("idle", "front", t=t, tilt=6 * sin(b.clock * 3.2))
+        return Anim("window_sit", "back", t=t)
+    if st == "fly":     # carried by the bees
+        return Anim("bee_carry", "front", t=t)
+    if st == "kroger":  # crouching over the find, holding it up
+        return Anim("clearance_inspect", "side", prog=_prog(t, dur))
+    if st == "vending":
+        if t < 4.6:
+            return Anim("think", "side", t=t)
+        return Anim("victory" if d.get("joy") else "sad_slump", "front", prog=_prog(t - 4.6, 2.0))
     if st == "gs_roll":
-        m = b.gs.get("machine")
-        if m is not None and m.lever > 0:   # pulling the lever
-            return Anim("attack", "side", frame=0 if m.lever < 0.3 else 3)
-        return Anim("idle", "side", t=t)
+        m = getattr(b, "gs", {}).get("machine")
+        if m is not None and m.pull_t is not None:   # at the lever
+            return Anim("lever_pull", "side", prog=_prog(m.pull_t, 0.6))
+        if t < 1.3:
+            return Anim("shrug", "side", prog=_prog(t, 1.3))
+        if m is not None and m.stopped:
+            prized = CONSOLES[b.gs["idx"]][2] >= 150   # losing a valuable one hurts
+            return Anim("sad_slump" if prized else "shrug", "three", prog=_prog(t - 4.8, 2.0))
+        return Anim("think", "side", t=t)
     if st == "gs_scalper":
-        return Anim("idle", "side", t=t, tilt=6 * sin(t * 16) if 8.2 < t < 10.4 else 0)
+        if 8.2 < t < 10.4:       # the headshake
+            return Anim("shrug", "side", t=t, speed=2.0)
+        return Anim("think" if 3.4 < t < 8.2 else "idle", "side", t=t)
     if st == "gs_door":
         end, sold = d.get("end"), d.get("sold")
+        if t < 1.5:
+            return Anim("sad_walk", "side", t=t, speed=2.0)   # out of breath
         if sold and end == "pittance":
-            return Anim("hurt", "three", frame=1)
+            return Anim("sad_slump", "three", prog=_prog(t - 8.2, 1.5))
         if sold and end == "bonus":
-            return Anim("skip", "three", t=t)
-        return Anim("idle", "side", t=t)
-    if st == "idle" and d.get("kind") in ("choose", "box"):
-        return Anim("attack", "side", t=t)
+            return Anim("victory", "front", prog=_prog(t - 7.4, 1.5)) if t < 11.4 else Anim("dance_disco", "front", t=t,
+                                                                                         speed=sum(ANIMS["dance_disco"]["ms"]) / 1000.0 / BEAT)
+        if end == "keep" and t > 8.2:
+            return Anim("sulk", "front", t=t)
+        return Anim("talk" if t > 3.6 else "idle", "side", t=t)
+    if st == "idle":
+        kind = d.get("kind")
+        if kind == "yawn":
+            return Anim("stretch", "front", prog=_prog(t, dur))
+        if kind == "choose":     # "I choose you!": wand out, then the swing
+            return Anim("attack", "side", t=max(0.0, t - 3.0)) if t > 3.0 else Anim("charge", "side", t=t)
+        if kind == "box":
+            return Anim("attack", "side", t=t * 1.4, speed=1.0)
     return Anim("idle", "three", t=t)
 
 
-def pick(action, t, phase, frame=None):
+def pick(action, t, phase=None, frame=None, prog=None):
     a = ANIMS[action]
     count = len(a["ms"])
     if frame is not None:
         return min(frame, count - 1)
+    if prog is not None:
+        return min(count - 1, int(prog * count))
     if phase is not None:
         return int(phase / (2 * math.pi) * count) % count
     total = sum(a["ms"])
@@ -109,24 +161,48 @@ def pick(action, t, phase, frame=None):
     return count - 1
 
 
-VIEWS = {"side": ("E", "W"), "three": ("SE", "SW"), "front": ("S", "S"), "back": ("N", "N")}
+def _wand_transition(b):
+    """The wand is only in his hand around the wand animations. Returns ('draw_wand'|'holster_wand', seconds)
+    while he is pulling it out or putting it away, else None."""
+    st = b.__dict__.setdefault("_wand", {"armed": False, "play": None, "t": 0.0})
+    want = anim_for(b).action in ARMED
+    dt = getattr(b, "_dt", 1 / 60)
+    if st["play"]:
+        st["t"] += dt
+        if st["t"] * 1000 >= sum(ANIMS[st["play"]]["ms"]):
+            st["armed"] = st["play"] == "draw_wand"
+            st["play"] = None
+    if not st["play"]:
+        if want and not st["armed"]:
+            st["play"], st["t"] = "draw_wand", 0.0
+        elif not want and st["armed"]:
+            st["play"], st["t"] = "holster_wand", 0.0
+    return (st["play"], st["t"]) if st["play"] else None
 
 
 def draw_sprite(p, x, floor, facing, scale, pose, buddy):
     an = anim_for(buddy)
+    trans = _wand_transition(buddy)
+    if trans:
+        an = Anim(trans[0], "three", t=trans[1])
     direction = VIEWS[an.view][0 if facing > 0 else 1]
-    pm = frame(an.action, direction, pick(an.action, an.t * an.speed, an.phase, an.frame))
+    pm = frame(an.action, direction, pick(an.action, an.t * an.speed, an.phase, an.frame, an.prog))
     if pm.isNull():
         return
     a = ANIMS[an.action]
     k = scale * a["size"]
+    anchor = a["feet"] if an.action in ("bee_carry",) else a["ay"]   # carried by the bees: hang by the feet line
     p.save()
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.translate(x, floor - (pose.lift - pose.bob + an.up) * scale)
+    if an.action == "window_sit":   # the seat sits on the title bar; the rig's bob is already in the pose's lift
+        lift = pose.lift + 12
+    else:
+        lift = pose.lift - pose.bob + an.up
+    p.translate(x, floor - lift * scale)
     p.rotate((pose.lean * 0.5 + pose.head * 0.4) * facing + an.tilt * facing)
     p.scale(pose.sx * k, pose.sy * k)
-    p.drawPixmap(QPointF(-a["ax"], -a["ay"]), pm)
+    p.drawPixmap(QPointF(-a["ax"], -anchor), pm)
     p.restore()
 
 

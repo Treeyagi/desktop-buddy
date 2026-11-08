@@ -1,73 +1,426 @@
 {
  "baseline": 150,
  "anims": {
-  "walk": {
-   "w": 140,
-   "h": 208,
-   "loop": true,
-   "hold": false,
-   "ms": [
-    100.0,
-    100.0,
-    100.0,
-    100.0,
-    100.0,
-    100.0
-   ],
-   "ax": 61,
-   "ay": 204,
-   "size": 0.9645
-  },
   "idle": {
-   "w": 151,
-   "h": 217,
    "loop": true,
    "hold": false,
+   "wand": "none",
    "ms": [
     700.0,
     233.3,
     116.7,
     450.0
    ],
-   "ax": 77,
-   "ay": 213,
-   "size": 0.9268
+   "w": 204,
+   "h": 210,
+   "ax": 105,
+   "ay": 206,
+   "feet": 206,
+   "size": 0.9744,
+   "res": "hd"
   },
-  "charge": {
-   "w": 180,
-   "h": 219,
+  "walk": {
    "loop": true,
    "hold": false,
+   "wand": "none",
    "ms": [
     100.0,
-    116.7,
-    133.3,
-    116.7
+    100.0,
+    100.0,
+    100.0,
+    100.0,
+    100.0
    ],
-   "ax": 91,
-   "ay": 215,
-   "size": 0.9179
+   "w": 180,
+   "h": 187,
+   "ax": 72,
+   "ay": 183,
+   "feet": 183,
+   "size": 0.9752,
+   "res": "hd"
+  },
+  "sad_walk": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 207,
+   "h": 204,
+   "ax": 104,
+   "ay": 200,
+   "feet": 200,
+   "size": 0.9317,
+   "res": "hd"
+  },
+  "sprint": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    66.7,
+    66.7,
+    66.7,
+    66.7
+   ],
+   "w": 206,
+   "h": 215,
+   "ax": 104,
+   "ay": 211,
+   "feet": 211,
+   "size": 1.0143,
+   "res": "hd"
+  },
+  "dodge": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 220,
+   "h": 214,
+   "ax": 111,
+   "ay": 210,
+   "feet": 210,
+   "size": 1.0488,
+   "res": "hd"
   },
   "hurt": {
-   "w": 196,
-   "h": 220,
    "loop": false,
-   "hold": false,
+   "hold": true,
+   "wand": "none",
    "ms": [
     50.0,
     83.3,
     100.0,
     66.7
    ],
-   "ax": 95,
-   "ay": 216,
-   "size": 0.9048
+   "w": 214,
+   "h": 212,
+   "ax": 110,
+   "ay": 208,
+   "feet": 208,
+   "size": 0.962,
+   "res": "hd"
   },
-  "attack": {
+  "faint": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    133.3,
+    200.0,
+    250.0,
+    416.7
+   ],
+   "w": 227,
+   "h": 260,
+   "ax": 127,
+   "ay": 256,
+   "feet": 256,
+   "size": 0.9357,
+   "res": "hd"
+  },
+  "bee_carry": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 230,
+   "h": 219,
+   "ax": 116,
+   "ay": 77.3,
+   "feet": 215,
+   "size": 1.0565,
+   "res": "hd"
+  },
+  "talk": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 205,
+   "h": 211,
+   "ax": 105,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9707,
+   "res": "hd"
+  },
+  "window_sit": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 214,
+   "h": 203,
+   "ax": 108,
+   "ay": 132.9,
+   "feet": 199,
+   "size": 0.8977,
+   "res": "hd"
+  },
+  "wave": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 235,
+   "h": 211,
+   "ax": 120,
+   "ay": 207,
+   "feet": 207,
+   "size": 1.0513,
+   "res": "hd"
+  },
+  "clearance_inspect": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 230,
+   "h": 216,
+   "ax": 123,
+   "ay": 212,
+   "feet": 212,
+   "size": 0.9159,
+   "res": "hd"
+  },
+  "stretch": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 212,
+   "h": 212,
+   "ax": 112,
+   "ay": 208,
+   "feet": 208,
+   "size": 1.071,
+   "res": "hd"
+  },
+  "meditate": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    400.0,
+    400.0,
+    400.0,
+    400.0
+   ],
+   "w": 213,
+   "h": 191,
+   "ax": 111,
+   "ay": 187,
+   "feet": 187,
+   "size": 0.7961,
+   "res": "hd"
+  },
+  "dance_groove": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 206,
+   "h": 211,
+   "ax": 105,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9596,
+   "res": "hd"
+  },
+  "dance_shuffle": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 216,
+   "h": 213,
+   "ax": 113,
+   "ay": 209,
+   "feet": 209,
+   "size": 0.9548,
+   "res": "hd"
+  },
+  "dance_disco": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 218,
+   "h": 210,
+   "ax": 113,
+   "ay": 206,
+   "feet": 206,
+   "size": 1.0663,
+   "res": "hd"
+  },
+  "lever_pull": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 208,
+   "h": 211,
+   "ax": 109,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9744,
+   "res": "hd"
+  },
+  "sad_slump": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 205,
+   "h": 211,
+   "ax": 105,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9781,
+   "res": "hd"
+  },
+  "think": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 206,
+   "h": 214,
+   "ax": 105,
+   "ay": 210,
+   "feet": 210,
+   "size": 0.9694,
+   "res": "hd"
+  },
+  "draw_wand": {
+   "loop": false,
+   "hold": true,
+   "wand": "transition",
+   "ms": [
+    100.0,
+    133.3,
+    133.3,
+    133.3
+   ],
+   "w": 209,
+   "h": 211,
+   "ax": 108,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9782,
+   "res": "hd"
+  },
+  "holster_wand": {
+   "loop": false,
+   "hold": true,
+   "wand": "transition",
+   "ms": [
+    133.3,
+    133.3,
+    133.3,
+    100.0
+   ],
+   "w": 209,
+   "h": 211,
+   "ax": 108,
+   "ay": 207,
+   "size": 0.9782,
+   "res": "hd",
+   "feet": 207
+  },
+  "charge": {
+   "loop": true,
+   "hold": false,
+   "wand": "visible",
+   "ms": [
+    100.0,
+    116.7,
+    133.3,
+    116.7
+   ],
    "w": 160,
    "h": 160,
+   "ax": 80.0,
+   "ay": 150,
+   "size": 1.4844,
+   "res": "low",
+   "feet": 150
+  },
+  "attack": {
    "loop": false,
-   "hold": false,
+   "hold": true,
+   "wand": "visible",
    "ms": [
     83.3,
     66.7,
@@ -76,39 +429,103 @@
     66.7,
     66.7
    ],
-   "ax": 80,
+   "w": 160,
+   "h": 160,
+   "ax": 80.0,
    "ay": 150,
-   "size": 1.4844
-  },
-  "faint": {
-   "w": 242,
-   "h": 233,
-   "loop": false,
-   "hold": true,
-   "ms": [
-    133.3,
-    200.0,
-    250.0,
-    416.7
-   ],
-   "ax": 121,
-   "ay": 229,
-   "size": 0.9268
+   "size": 1.4844,
+   "res": "low",
+   "feet": 150
   },
   "skip": {
-   "w": 167,
-   "h": 231,
    "loop": true,
    "hold": false,
+   "wand": "none",
    "ms": [
-    100.0,
-    100.0,
-    100.0,
-    100.0
+    166.7,
+    166.7,
+    166.7,
+    166.7
    ],
-   "ax": 76,
-   "ay": 227,
-   "size": 0.9091
+   "w": 224,
+   "h": 223,
+   "ax": 117,
+   "ay": 219,
+   "feet": 219,
+   "size": 0.9736,
+   "res": "hd"
+  },
+  "nap": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    400.0,
+    400.0,
+    400.0,
+    400.0
+   ],
+   "w": 220,
+   "h": 204,
+   "ax": 113,
+   "ay": 200,
+   "feet": 200,
+   "size": 0.7953,
+   "res": "hd"
+  },
+  "victory": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 207,
+   "h": 214,
+   "ax": 108,
+   "ay": 210,
+   "feet": 210,
+   "size": 1.0706,
+   "res": "hd"
+  },
+  "shrug": {
+   "loop": false,
+   "hold": true,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 216,
+   "h": 211,
+   "ax": 116,
+   "ay": 207,
+   "feet": 207,
+   "size": 0.9694,
+   "res": "hd"
+  },
+  "sulk": {
+   "loop": true,
+   "hold": false,
+   "wand": "none",
+   "ms": [
+    166.7,
+    166.7,
+    166.7,
+    166.7
+   ],
+   "w": 209,
+   "h": 221,
+   "ax": 107,
+   "ay": 217,
+   "feet": 217,
+   "size": 0.9273,
+   "res": "hd"
   }
  }
 }
