@@ -1,8 +1,9 @@
 """The sprite character: Treeyagi, from his character pack (character/sprites/treeyagi/).
 
 An alternative to the vector rig (settings: "character"). The pack has seven actions in eight directions
-(idle, walk, skip, charge, attack, hurt, faint; frames and timings in anims.json, ground baseline y=150,
-anchor at half the frame width). The Buddy's states map onto them in `anim_for`; the pose's lift, bob,
+(idle, walk, skip, charge, attack, hurt, faint; frames and timings in anims.json). Walk, idle, skip, charge,
+hurt and faint are cut from the pack's high-resolution source sheets (about 216 px tall); attack only exists
+in the pack at 128 px, so it is drawn bigger and softer. Each action has its own anchor (ax, ay) and size. The Buddy's states map onto them in `anim_for`; the pose's lift, bob,
 squash and lean still move the whole picture, so jumps and squashes work. Walking is driven by the walk
 phase so his feet plant; the rest play on their own clocks.
 """
@@ -16,10 +17,8 @@ from PyQt6.QtGui import QPainter, QPixmap
 DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sprites", "treeyagi")
 with open(os.path.join(DIR, "anims.json")) as _f:
     _meta = json.load(_f)
-BASELINE = _meta["baseline"]
 ANIMS = _meta["anims"]
 SIDE = {"walk", "skip", "attack"}   # these play in profile; the rest in front three-quarter view
-SIZE = 190.0 / 128.0                # the character is 128 px tall inside its frame; draw him ~190 px tall at scale 1
 _frames = {}
 
 
@@ -71,14 +70,15 @@ def draw_sprite(p, x, floor, facing, scale, pose, buddy):
     pm = frame(action, direction, pick(action, t, phase))
     if pm.isNull():
         return
-    k = scale * SIZE
+    a = ANIMS[action]
+    k = scale * a["size"]
     p.save()
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.translate(x, floor - (pose.lift - pose.bob) * scale)
     p.rotate(pose.lean * 0.5 * facing)
     p.scale(pose.sx * k, pose.sy * k)
-    p.drawPixmap(QPointF(-pm.width() / 2, -BASELINE), pm)
+    p.drawPixmap(QPointF(-a["ax"], -a["ay"]), pm)
     p.restore()
 
 
