@@ -12,7 +12,7 @@ class LookTab:
         cgroup = QButtonGroup(self)
         cgroup.setExclusive(True)
         for key, label, pm in (("cartoon", "Cartoon", self._char_pixmap(False)),
-                               ("sprite", "Inzo (sprite)", self._char_pixmap(True))):
+                               ("sprite", "Treeyagi (sprite)", self._char_pixmap(True))):
             b = QToolButton()
             b.setCheckable(True)
             b.setIcon(QIcon(pm))

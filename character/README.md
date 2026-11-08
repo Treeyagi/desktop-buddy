@@ -33,6 +33,7 @@ A vector puppet drawn with QPainter in the style of `reference-ultimate-pull.jpg
 - `effects.py`: hummed music notes, sparkles, hearts, dust puffs, snore z's, tear drops, glowing spores, and flowers and toadstools that sprout from the floor.
 - `scenes.py`: multi-step bits that queue a walk and then their own action, with thought clouds and props.
 - `props.py`: clearance-aisle finds (gnome, lava lamp, cactus, rubber duck, mystery box, each with a yellow % tag), glowing copies of real desktop icons, the CARD-O-MATIC vending machine, the bundle and the holo "ULTRA RARE" card. All original art, no real logos or card art.
+- `sprite.py`: the alternative look (settings: Character). Treeyagi from his character pack in `sprites/treeyagi/`: idle, walk, skip, charge, attack, hurt and faint in eight directions. Walking uses the walk cycle, jumps, dances and the sprint skip, spores and listening charge up the wand, a nap faints and holds, shadow boxing and "I choose you!" swing the wand. Everything else is the idle loop, with the pose's lift, squash and lean applied to the picture.
 - `preview.py`: renders a contact sheet of actions to a PNG, no desktop needed:
   `python3 character/preview.py sheet.png`. The saved sheets are `action-sheet.png`, `scenes-kroger.png` and `scenes-vending.png`.
 

@@ -430,9 +430,7 @@ class Buddy(SceneMixin, GameStopMixin, AdhdMixin, MomentsMixin):
     def draw(self, p):
         self.draw_props_behind(p)
         if self.sprite_mode:
-            walking = self.state in ("walk", "gs_madness")
-            draw_sprite(p, self.x, self.floor, self.facing, self.scale, self.pose,
-                        self.data.get("phase", 0.0) if walking else None, self.clock)
+            draw_sprite(p, self.x, self.floor, self.facing, self.scale, self.pose, self)
         else:
             draw_buddy(p, self.x, self.floor, self.facing, self.scale, self.pose,
                        self.hat_bend, self.hat_squash, self.clock)
