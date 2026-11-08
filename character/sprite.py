@@ -7,7 +7,7 @@ they are drawn bigger and a little softer. Each action has its own anchor (ax, a
 
 `anim_for()` maps every Buddy state onto an animation and a view. The wand only ever appears around the
 wand states: when a state wants it and he doesn't have it out, he plays draw_wand first, and when he is
-done with it, holster_wand. The pose's lift, squash, lean and head tilt still move the whole picture.
+done with it, holster_wand. Only air (carried, perched) lifts him; the sprites hop and lean in their own art, and animation changes crossfade.
 """
 import json
 import math
@@ -54,9 +54,9 @@ def anim_for(b):
     sin = math.sin
     dur = getattr(b, "dur", 0) or 0
     if st == "walk":
-        if d.get("mood") == "sad":
-            return Anim("sad_walk", "side", phase=d.get("phase", 0.0))
-        return Anim("walk", "side", phase=d.get("phase", 0.0))
+        cycle = 125.0 if d.get("mood") == "sad" else 140.0   # ground covered by one full walk cycle, so his feet don't slide
+        phase = getattr(b, "_spr_dist", 0.0) / (cycle * b.scale) * math.tau
+        return Anim("sad_walk" if d.get("mood") == "sad" else "walk", "side", phase=phase)
     if st == "chase":
         return Anim("sprint", "side", t=t)
     if st == "pounce":
@@ -180,7 +180,25 @@ def _wand_transition(b):
     return (st["play"], st["t"]) if st["play"] else None
 
 
+FADE = 0.12   # seconds to crossfade when the animation or direction changes
+
+
+def _ground(b, an):
+    """How far off the floor he is, in rig units. The sprites already hop, crouch and lean in their own art,
+    so the old rig's jump/bob/lean are not applied; only being carried or perched lifts him."""
+    air = getattr(b, "air", 0.0)
+    if an.action == "window_sit":     # the seat sits on the title bar
+        return air + 12 * max(0.0, min(1.0, b.pose.bob / 26.0))
+    if an.action == "meditate":       # a gentle float
+        return air + 5 * (1 + math.sin(b.clock * 1.3))
+    return air + an.up
+
+
 def draw_sprite(p, x, floor, facing, scale, pose, buddy):
+    st = buddy.__dict__.setdefault("_spr", {"key": None, "old": None, "fade": 1.0, "last": None, "x": x, "dist": 0.0})
+    st["dist"] += abs(x - st["x"])
+    st["x"] = x
+    buddy._spr_dist = st["dist"]
     an = anim_for(buddy)
     trans = _wand_transition(buddy)
     if trans:
@@ -190,18 +208,32 @@ def draw_sprite(p, x, floor, facing, scale, pose, buddy):
     if pm.isNull():
         return
     a = ANIMS[an.action]
-    k = scale * a["size"]
-    anchor = a["feet"] if an.action in ("bee_carry",) else a["ay"]   # carried by the bees: hang by the feet line
+    anchor = a["feet"] if an.action == "bee_carry" else a["ay"]   # carried by the bees: hang by the feet line
+    cur = (pm, a["ax"], anchor, a["size"])
+    key = (an.action, direction)
+    if key != st["key"]:
+        if st["last"] is not None:
+            st["old"], st["fade"] = st["last"], 0.0
+        st["key"] = key
+    st["last"] = cur
+    st["fade"] = min(1.0, st["fade"] + getattr(buddy, "_dt", 1 / 60) / FADE)
+    sx = 1.0
+    if buddy.turn_t < 0.22:   # turning around: a quick squash, as in the cartoon
+        sx = 1 - 0.28 * math.sin(min(1.0, buddy.turn_t / 0.22) * math.pi)
     p.save()
     p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    if an.action == "window_sit":   # the seat sits on the title bar; the rig's bob is already in the pose's lift
-        lift = pose.lift + 12
-    else:
-        lift = pose.lift - pose.bob + an.up
-    p.translate(x, floor - lift * scale)
-    p.rotate((pose.lean * 0.5 + pose.head * 0.4) * facing + an.tilt * facing)
-    p.scale(pose.sx * k, pose.sy * k)
+    p.translate(x, floor - _ground(buddy, an) * scale)
+    p.rotate(an.tilt * facing)
+    if st["old"] is not None and st["fade"] < 1.0:
+        opm, oax, oay, osize = st["old"]
+        p.save()
+        p.setOpacity(1.0 - st["fade"])
+        p.scale(sx * scale * osize, scale * osize)
+        p.drawPixmap(QPointF(-oax, -oay), opm)
+        p.restore()
+        p.setOpacity(st["fade"])
+    p.scale(sx * scale * a["size"], scale * a["size"])
     p.drawPixmap(QPointF(-a["ax"], -anchor), pm)
     p.restore()
 
