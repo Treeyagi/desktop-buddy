@@ -62,12 +62,22 @@ if [ $YES = 0 ] && [ -t 0 ]; then
   case "$ans" in n|N|no|NO) echo "Cancelled."; exit 1;; esac
 fi
 
-# layer-shell-qt is optional (without it he's a normal window), so if the one command fails, retry without it
+# Only Python and PyQt6 are required. If the one big command fails (a mirror serving a 404, a package the
+# distro doesn't have), install the required ones first, then each extra on its own and list what didn't make it.
 if ! sh -c "$CMD"; then
-  echo "That failed; trying again without layer-shell-qt (he still works without it)."
-  PKGS2="$(echo "$PKGS" | sed 's/ layer-shell-qt//')"
-  CMD2="$(echo "$CMD" | sed 's/ layer-shell-qt//')"
-  sh -c "$CMD2" || { echo "Install failed. Run it yourself: $CMD2" >&2; exit 1; }
+  echo "That failed; installing Python and PyQt6 first, then each extra on its own (he works without them)."
+  case "$PM" in
+    pacman) REQ="python python-pyqt6"; INST="$SUDO pacman -S --needed --noconfirm";;
+    apt)    REQ="python3 python3-pyqt6"; INST="$SUDO apt-get install -y";;
+    dnf)    REQ="python3 python3-pyqt6"; INST="$SUDO dnf install -y";;
+  esac
+  sh -c "$INST $REQ" || { echo "Install failed. Run it yourself: $INST $REQ" >&2; exit 1; }
+  MISSED=""
+  for p in $PKGS; do
+    case " $REQ " in *" $p "*) continue;; esac
+    sh -c "$INST $p" || MISSED="$MISSED $p"
+  done
+  [ -n "$MISSED" ] && echo "Couldn't install:$MISSED (his voice, screenshots or layer-shell may be missing). Try again later: sh tools/install-deps.sh"
 fi
 
 echo
