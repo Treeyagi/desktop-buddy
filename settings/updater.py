@@ -1,6 +1,6 @@
 """Checks GitHub for a newer release (a v1.2.3 tag) and fast-forwards this folder to it.
 
-Uses the git already set up here (so a private repo works with your own credentials); nothing is
+Uses the git already set up here (the repo is public, so no login is needed); nothing is
 downloaded outside git, and an update never overwrites changes you've made (it refuses instead)."""
 import os
 import re

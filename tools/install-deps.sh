@@ -97,5 +97,4 @@ if [ $CLAUDE = 1 ] && ! have claude; then
   echo "Open a new terminal and run: claude   (it asks you to sign in once)"
 elif have claude; then echo "claude: ok"
 else echo "Claude Code not installed: he works without it, in text bubbles. Add it later with: sh tools/install-deps.sh --claude"; fi
-have gh && ! gh auth status >/dev/null 2>&1 && echo "One more step: run 'gh auth login' so he can download updates from the private repo."
 echo "Done. Start him with ./desktop-buddy (or python3 overlay/main.py)."

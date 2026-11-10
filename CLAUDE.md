@@ -1,7 +1,7 @@
 # Desktop Buddy: notes for Claude
 
 A cartoon of the user living on their KDE Plasma 6 (Wayland, CachyOS) desktop. Python 3.14 + PyQt6, no
-other Python deps. GitHub: Treeyagi/desktop-buddy (private). Plans and ideas: `ROADMAP.md`.
+other Python deps. GitHub: Treeyagi/desktop-buddy (public: nothing here needs a GitHub login). Plans and ideas: `ROADMAP.md`.
 
 ## Keep token use low
 - Read the README of the one folder you're working in, then only the files you need. Don't read
