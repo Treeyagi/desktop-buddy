@@ -11,7 +11,7 @@ import sys
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from PyQt6.QtCore import QPointF, QRectF, Qt  # noqa: E402
+from PyQt6.QtCore import QPointF, QRectF  # noqa: E402
 from PyQt6.QtGui import QColor, QFont, QGuiApplication, QImage, QLinearGradient, QPainter  # noqa: E402
 
 from character.behavior import ACTIONS, Buddy  # noqa: E402

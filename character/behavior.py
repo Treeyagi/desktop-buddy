@@ -16,7 +16,7 @@ from character.bees import Hive
 from character.effects import Effects
 from character.gamestop import GameStopMixin, GsProp
 from character.props import Machine
-from character.moves import DANCE_MOVES, dance_pose, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
+from character.moves import DANCE_MOVES, fists_up, gait_pose, hug, palms_up, scratch_beard, shrug
 from character.rig import INK, Pose, _pen, draw_buddy, ease, lerp, lerp_pose, skeleton, to_world
 from character.adhd import ADHD_ACTIONS, AdhdMixin
 from character.moments import MomentsMixin

@@ -115,7 +115,6 @@ class BuddyTab:
         self.version.setText(updater.current()[1])
 
     def _update_clicked(self):
-        from settings import updater
         if self.update_job and self.update_job.isRunning():
             return
         tag = self.update_tag

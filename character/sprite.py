@@ -51,7 +51,6 @@ def _prog(t, dur):
 def anim_for(b):
     """Maps the Buddy's current state onto the pack's animations (b is the Buddy)."""
     st, t, d = b.state, b.t, b.data
-    sin = math.sin
     dur = getattr(b, "dur", 0) or 0
     if st == "walk":
         cycle = 125.0 if d.get("mood") == "sad" else 140.0   # ground covered by one full walk cycle, so his feet don't slide

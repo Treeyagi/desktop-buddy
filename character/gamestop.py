@@ -1044,7 +1044,7 @@ class GameStopMixin:
                     sh_f=lerp(40, 4, a), el_f=lerp(70, 6, a), bob=3 * a, hat=8 * a, hand_f="fist")
 
     def _gs_bonus(self, u, m, c, store_v):
-        s, dr = self.scale, self.gs["dir"]
+        s = self.scale
         pay = store_v * 3 + 40
         if u < 0.05 and self._once("price"):
             m.say(f"...wait. this is MINT. ${pay}!!", life=3.0)
