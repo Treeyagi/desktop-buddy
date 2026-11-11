@@ -1,48 +1,41 @@
 # Desktop Buddy: notes for Claude
 
-A cartoon of the user living on their KDE Plasma 6 (Wayland, CachyOS) desktop. Python 3.14 + PyQt6, no
-other Python deps. GitHub: Treeyagi/desktop-buddy (public: nothing here needs a GitHub login). Plans and ideas: `ROADMAP.md`.
+A cartoon of the user living on their KDE Plasma 6 desktop (Wayland, CachyOS): animated, desktop-aware,
+Claude brain, push-to-talk. Python 3.14 + PyQt6, no other Python deps in the app.
+GitHub: `Treeyagi/desktop-buddy` — **public**, so nothing secret may ever land in a file here.
 
-## Keep token use low
-- Read the README of the one folder you're working in, then only the files you need. Don't read
-  `character/rig.py` (drawing) or `character/scenes.py` unless the task is about them.
-- Modules talk only through the bus (`core/bus.py`); every topic is in `core/README.md`. Prefer adding
-  a topic over reaching into another module.
-- Verify with the tools below instead of writing new test scripts.
+General working rules (plain English, plan first, git and secrets) are in `~/.claude/CLAUDE.md`.
+Live plan: `ROADMAP.md`. Original vision: `docs/NOTES.md`.
 
-## Map
-| Where | What |
+## Read these before you touch anything
+
+| Before you... | Read first |
 |---|---|
-| `overlay/main.py` | Entry point. `Controller` wires everything, applies settings live, listens on the local socket |
-| `character/behavior.py` | `Buddy`: director (`pick_next`), basic actions as `_<name>()` returning a `Pose`, voice moves |
-| `character/scenes.py` / `adhd.py` | Mixins: multi-step scenes (kroger, vending, perch, flying) / ADHD moves |
-| `character/rig.py` | `Pose` fields and all drawing (body, face, hat, shoes). `moves.py` = shared poses |
-| `character/bees.py`, `effects.py`, `props.py` | Bees, particles, props (items, vending machine, card) |
-| `attention/engine.py` | ADHD engine: decides when he's distracted, nudges, mood, focus timer |
-| `desktop-awareness/` | `icons.py` (Plasma config), `windows.py` + `kwin_windows.js` (KWin script: windows, cursor) |
-| `brain/` | `client.ask()` to Claude (Claude Code CLI or API), `personality.md`, `who-i-am.md` |
-| `voice-in/` | push-to-talk: `hotkey.py` (KGlobalAccel), `recorder.py` (pw-record), `stt.py` (whisper-cli), `listen.py` |
-| `voice-out/` | `samples.py` (mood scripts). TTS not built yet |
-| `settings/store.py` | `DEFAULTS` + the JSON file in `~/.config/desktop-buddy/`; overlay reloads it live |
-| `settings/window.py` + `settings/tabs/*.py` | Settings window; one mixin per tab, each with `_<tab>_tab()` and `_sync_<tab>()` |
-| `settings/tray.py` | Tray icon menu |
+| work in **any** feature folder | **that folder's `README.md`** — they're the reference and they're kept current |
+| work in `character/`, `brain/`, `voice-in/`, `voice-out/`, `desktop-awareness/` or `settings/` | the nested `CLAUDE.md` there; it loads automatically |
+| have a module talk to another module | [core/README.md](core/README.md) — the bus topic table is the contract |
+| add an action, a setting or a bus topic | [docs/how-to/add-things.md](docs/how-to/add-things.md) |
+| check a change, or finish a session | [docs/how-to/check-your-work.md](docs/how-to/check-your-work.md) |
+| touch the mic, the screen, the API key, or anything that plays music | [docs/explanation/privacy-cost-and-licensing.md](docs/explanation/privacy-cost-and-licensing.md) |
+| build or publish a release | [docs/how-to/release.md](docs/how-to/release.md) |
+| make a structural or design decision | [ARCHITECTURE.md](ARCHITECTURE.md) |
 
-## Recipes
-- **New action:** add `"name": (weight, (min_s, max_s))` to `ACTIONS` in `behavior.py` and a `_name(self, dt)`
-  method returning a `Pose` (optional `_start_name`). Add a row to `BEHAVIORS` in `settings/tabs/common.py`.
-- **New setting:** add to `DEFAULTS` in `settings/store.py`, apply it in `Controller.apply` (`overlay/main.py`),
-  add the widget in its tab file plus a line in that tab's `_sync_<tab>()`, and document it in `settings/README.md`.
-- **New bus topic:** publish/subscribe with `bus.publish(topic, payload)`, add a row to `core/README.md`.
+Add new knowledge to the quadrant that fits ([docs/README.md](docs/README.md)), not to this file.
 
-## Check your work
-- `python3 tools/soak.py [minutes]`: every move + random life, headless; must print "ok".
-- `python3 character/preview.py out.png --actions dance,jump`: contact sheet of moves.
-- `python3 tools/render_tab.py behavior out.png`: render a settings tab (throwaway settings).
-- `python3 tools/install.py` / `--uninstall`: the start menu entry. `python3 tools/shutdown.py`: stop everything.
-- `python3 tools/send.py dance` / `--focus 25`: drive a running buddy.
-- Live: `python3 overlay/main.py`, screenshot with `spectacle -b -n -f -o shot.png`.
+## Non-negotiables
 
-## Rules
-- Never leave the mic recording; recordings get deleted after use. Never commit secrets (API key lives in KWallet).
-- KWin scripts must be unloaded when done. Don't change the user's KDE shortcuts beyond push-to-talk.
-- Commits end with the Co-Authored-By line; the repo uses the GitHub noreply email.
+- **Modules talk only through the bus** (`core/bus.py`). Add a topic rather than an import, and add its row
+  to the table in `core/README.md` in the same change.
+- **Never leave the mic recording.** Recordings are deleted after use.
+- **A screenshot happens only on the "Look at my screen" hotkey** — the one path that sends a picture of the
+  user's desktop, and the main thing that costs usage money.
+- **The API key lives in the system keyring only** (`brain/keychain.py`, KWallet), never in a file.
+  This repo is public.
+- **KWin scripts must be unloaded when done**, and don't change the user's KDE shortcuts beyond push-to-talk.
+- **Don't edit `brain/personality.md` or `brain/who-i-am.md`.** They're the user's own words — his product,
+  not config.
+- **Run `python3 tools/shutdown.py` when you're done.** It stops the buddy and voice server and deletes
+  leftover audio and screenshots.
+- `python3 tools/soak.py` must print `ok`. Verify with the tools in `tools/`, not new throwaway scripts.
+- **Don't read `character/rig.py` or `character/scenes.py`** unless the task is about them.
+- No real songs, samples or recognisable depictions — generated melodies and original look-alikes only.
